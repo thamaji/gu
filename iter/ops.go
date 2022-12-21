@@ -44,6 +44,18 @@ func GetOrElse[V any](iter Iter[V], index int, v V) (V, error) {
 	return v, nil
 }
 
+// 指定した位置の要素を返す。無い場合は関数の実行結果を返す。
+func GetOrFunc[V any](iter Iter[V], index int, f func() (V, error)) (V, error) {
+	v, ok, err := Get(iter, index)
+	if err != nil {
+		return *new(V), err
+	}
+	if ok {
+		return v, nil
+	}
+	return f()
+}
+
 // 先頭の値を返す。
 func GetFirst[V any](iter Iter[V]) (V, bool, error) {
 	return Get(iter, 0)

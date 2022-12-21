@@ -29,6 +29,14 @@ func GetOrElse[V any](p *V, v V) V {
 	return *p
 }
 
+// 値を返す。無い場合は関数の実行結果を返す。
+func GetOrFunc[V any](p *V, f func() (V, error)) (V, error) {
+	if p == nil {
+		return f()
+	}
+	return *p, nil
+}
+
 // 値ごとに関数を実行する。
 func ForEach[V any](p *V, f func(V) error) error {
 	if p == nil {

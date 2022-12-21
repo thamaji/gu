@@ -26,6 +26,14 @@ func GetOrElse[K comparable, V any](m map[K]V, k K, v V) V {
 	return v
 }
 
+// 指定したキーの値を返す。無い場合は関数の実行結果を返す。
+func GetOrFunc[K comparable, V any](m map[K]V, k K, f func() (V, error)) (V, error) {
+	if v, ok := m[k]; ok {
+		return v, nil
+	}
+	return f()
+}
+
 // 要素をすべてコピーしたマップを返す。
 func Clone[K comparable, V any](m map[K]V) map[K]V {
 	dst := make(map[K]V, len(m))

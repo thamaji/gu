@@ -28,6 +28,14 @@ func GetOrElse[V any](slice []V, index int, v V) V {
 	return v
 }
 
+// 指定した位置の要素を返す。無い場合は関数の実行結果を返す。
+func GetOrFunc[V any](slice []V, index int, f func() (V, error)) (V, error) {
+	if index < len(slice) {
+		return slice[index], nil
+	}
+	return f()
+}
+
 // 先頭の要素を返す。
 func GetFirst[V any](slice []V) (V, bool) {
 	if len(slice) > 0 {
