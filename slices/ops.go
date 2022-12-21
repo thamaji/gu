@@ -1,7 +1,8 @@
 package slices
 
 import (
-	"github.com/thamaji/gu/iter"
+	"math/rand"
+
 	"github.com/thamaji/gu/tuple"
 	"golang.org/x/exp/constraints"
 )
@@ -86,17 +87,52 @@ func Remove[V any](slice []V, index int) []V {
 	return dst
 }
 
+// 要素をすべてコピーしたスライスを返す。
+func Clone[V any](slice []V) []V {
+	clone := make([]V, len(slice))
+	copy(clone, slice)
+	return clone
+}
+
+// 要素を１つランダムに返す。
+func Sample[V any](slice []V, r *rand.Rand) V {
+	return slice[r.Intn(len(slice))]
+}
+
+// 逆順にしたスライスを返す。
+func Reverse[V any](slice []V) []V {
+	dst := make([]V, 0, len(slice))
+	for i := len(slice) - 1; i >= 0; i-- {
+		dst = append(dst, slice[i])
+	}
+	return dst
+}
+
 // 値ごとに関数を実行する。
-func ForEach[V any](slice []V, f func(V)) {
-	iter.ForEach(iter.FromSlice(slice), f)
+func ForEach[V any](slice []V, f func(V) error) error {
+	for i := range slice {
+		if err := f(slice[i]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // 他のスライスと関数で比較し、一致していたらtrueを返す。
-func EqualBy[V any](slice1 []V, slice2 []V, f func(V, V) bool) bool {
+func EqualBy[V any](slice1 []V, slice2 []V, f func(V, V) (bool, error)) (bool, error) {
 	if len(slice1) != len(slice2) {
-		return false
+		return false, nil
 	}
-	return iter.EqualBy(iter.FromSlice(slice1), iter.FromSlice(slice2), f)
+	for i := range slice1 {
+		ok, err := f(slice1[i], slice2[i])
+		if err != nil {
+			return false, err
+		}
+		if !ok {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // 他のスライスと一致していたらtrueを返す。
@@ -104,290 +140,771 @@ func Equal[V comparable](slice1 []V, slice2 []V) bool {
 	if len(slice1) != len(slice2) {
 		return false
 	}
-	return iter.Equal(iter.FromSlice(slice1), iter.FromSlice(slice2))
+	for i := range slice1 {
+		if slice1[i] != slice2[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // 条件を満たす値の数を返す。
-func CountBy[V any](slice []V, f func(V) bool) int {
-	return iter.CountBy(iter.FromSlice(slice), f)
+func CountBy[V any](slice []V, f func(V) (bool, error)) (int, error) {
+	c := 0
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return 0, err
+		}
+		if ok {
+			c++
+		}
+	}
+	return c, nil
 }
 
 // 一致する値の数を返す。
 func Count[V comparable](slice []V, v V) int {
-	return iter.Count(iter.FromSlice(slice), v)
+	c := 0
+	for i := range slice {
+		if slice[i] == v {
+			c++
+		}
+	}
+	return c
 }
 
 // 位置のスライスを返す。
 func Indices[V any](slice []V) []int {
-	return iter.ToSlice(iter.Indices(iter.FromSlice(slice)))
+	dst := make([]int, len(slice))
+	for i := range slice {
+		dst[i] = i
+	}
+	return dst
 }
 
 // 値を変換したスライスを返す。
-func Map[V1 any, V2 any](slice []V1, f func(V1) V2) []V2 {
-	return iter.ToSlice(iter.Map(iter.FromSlice(slice), f))
+func Map[V1 any, V2 any](slice []V1, f func(V1) (V2, error)) ([]V2, error) {
+	dst := make([]V2, len(slice))
+	for i := range slice {
+		v2, err := f(slice[i])
+		if err != nil {
+			return nil, err
+		}
+		dst[i] = v2
+	}
+	return dst, nil
 }
 
 // 値を順に演算する。
-func Reduce[V any](slice []V, f func(V, V) V) V {
-	return iter.Reduce(iter.FromSlice(slice), f)
+func Reduce[V any](slice []V, f func(V, V) (V, error)) (V, error) {
+	var v V
+	var err error
+	if len(slice) > 0 {
+		v = slice[0]
+		for i := 1; i < len(slice); i++ {
+			v, err = f(v, slice[i])
+			if err != nil {
+				return *new(V), err
+			}
+		}
+	}
+	return v, nil
 }
 
 // 値の合計を演算する。
 func Sum[V constraints.Ordered | constraints.Complex](slice []V) V {
-	return iter.Sum(iter.FromSlice(slice))
+	var sum V
+	if len(slice) > 0 {
+		sum = slice[0]
+		for i := 1; i < len(slice); i++ {
+			sum += slice[i]
+		}
+	}
+	return sum
 }
 
 // 値を変換して合計を演算する。
-func SumBy[V1 any, V2 constraints.Ordered | constraints.Complex](slice []V1, f func(V1) V2) V2 {
-	return iter.SumBy(iter.FromSlice(slice), f)
+func SumBy[V1 any, V2 constraints.Ordered | constraints.Complex](slice []V1, f func(V1) (V2, error)) (V2, error) {
+	var sum V2
+	var err error
+	if len(slice) > 0 {
+		sum, err = f(slice[0])
+		if err != nil {
+			return *new(V2), err
+		}
+
+		for i := 1; i < len(slice); i++ {
+			v2, err := f(slice[i])
+			if err != nil {
+				return *new(V2), err
+			}
+			sum += v2
+		}
+	}
+	return sum, nil
 }
 
 // 最大の値を返す。
 func Max[V constraints.Ordered](slice []V) V {
-	return iter.Max(iter.FromSlice(slice))
+	var max V
+	if len(slice) > 0 {
+		max = slice[0]
+		for i := 1; i < len(slice); i++ {
+			if max < slice[i] {
+				max = slice[i]
+			}
+		}
+	}
+	return max
 }
 
 // 値を変換して最大の値を返す
-func MaxBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) V2) V2 {
-	return iter.MaxBy(iter.FromSlice(slice), f)
+func MaxBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) (V2, error)) (V2, error) {
+	var max V2
+	var err error
+	if len(slice) > 0 {
+		max, err = f(slice[0])
+		if err != nil {
+			return *new(V2), err
+		}
+
+		for i := 1; i < len(slice); i++ {
+			v2, err := f(slice[i])
+			if err != nil {
+				return *new(V2), err
+			}
+			if max < v2 {
+				max = v2
+			}
+		}
+	}
+	return max, nil
 }
 
 // 最小の値を返す。
 func Min[V constraints.Ordered](slice []V) V {
-	return iter.Min(iter.FromSlice(slice))
+	var min V
+	if len(slice) > 0 {
+		min = slice[0]
+		for i := 1; i < len(slice); i++ {
+			if min > slice[i] {
+				min = slice[i]
+			}
+		}
+	}
+	return min
 }
 
 // 値を変換して最小の値を返す
-func MinBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) V2) V2 {
-	return iter.MinBy(iter.FromSlice(slice), f)
+func MinBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) (V2, error)) (V2, error) {
+	var min V2
+	var err error
+	if len(slice) > 0 {
+		min, err = f(slice[0])
+		if err != nil {
+			return *new(V2), err
+		}
+
+		for i := 1; i < len(slice); i++ {
+			v, err := f(slice[i])
+			if err != nil {
+				return *new(V2), err
+			}
+			if min > v {
+				min = v
+			}
+		}
+	}
+	return min, nil
 }
 
 // 初期値と値を順に演算する。
-func Fold[V1 any, V2 any](slice []V1, v V2, f func(V2, V1) V2) V2 {
-	return iter.Fold(iter.FromSlice(slice), v, f)
+func Fold[V1 any, V2 any](slice []V1, v V2, f func(V2, V1) (V2, error)) (V2, error) {
+	var err error
+	for i := range slice {
+		v, err = f(v, slice[i])
+		if err != nil {
+			return *new(V2), err
+		}
+	}
+	return v, nil
 }
 
 // 条件を満たす最初の値の位置を返す。
-func IndexBy[V any](slice []V, f func(V) bool) int {
-	return iter.IndexBy(iter.FromSlice(slice), f)
+func IndexBy[V any](slice []V, f func(V) (bool, error)) (int, error) {
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return 0, err
+		}
+		if ok {
+			return i, nil
+		}
+	}
+	return -1, nil
 }
 
 // 一致する最初の値の位置を返す。
 func Index[V comparable](slice []V, v V) int {
-	return iter.Index(iter.FromSlice(slice), v)
+	for i := range slice {
+		if slice[i] == v {
+			return i
+		}
+	}
+	return -1
 }
 
 // 条件を満たす最後の値の位置を返す。
-func LastIndexBy[V any](slice []V, f func(V) bool) int {
-	return iter.LastIndexBy(iter.FromSlice(slice), f)
+func LastIndexBy[V any](slice []V, f func(V) (bool, error)) (int, error) {
+	for i := len(slice) - 1; i >= 0; i-- {
+		ok, err := f(slice[i])
+		if err != nil {
+			return 0, err
+		}
+		if ok {
+			return i, nil
+		}
+	}
+	return -1, nil
 }
 
 // 一致する最後の値の位置を返す。
 func LastIndex[V comparable](slice []V, v V) int {
-	return iter.LastIndex(iter.FromSlice(slice), v)
+	for i := len(slice) - 1; i >= 0; i-- {
+		if slice[i] == v {
+			return i
+		}
+	}
+	return -1
 }
 
 // 条件を満たす値を返す。
-func FindBy[V any](slice []V, f func(V) bool) (V, bool) {
-	return iter.FindBy(iter.FromSlice(slice), f)
+func FindBy[V any](slice []V, f func(V) (bool, error)) (V, bool, error) {
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return *new(V), false, err
+		}
+		if ok {
+			return slice[i], true, nil
+		}
+	}
+	return *new(V), false, nil
 }
 
 // 一致する値を返す。
 func Find[V comparable](slice []V, v V) (V, bool) {
-	return iter.Find(iter.FromSlice(slice), v)
+	for i := range slice {
+		if slice[i] == v {
+			return slice[i], true
+		}
+	}
+	return *new(V), false
 }
 
 // 条件を満たす値が存在したらtrueを返す。
-func ExistsBy[V any](slice []V, f func(V) bool) bool {
-	return iter.ExistsBy(iter.FromSlice(slice), f)
+func ExistsBy[V any](slice []V, f func(V) (bool, error)) (bool, error) {
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // 一致する値が存在したらtrueを返す。
 func Exists[V comparable](slice []V, v V) bool {
-	return iter.Exists(iter.FromSlice(slice), v)
+	for i := range slice {
+		if slice[i] == v {
+			return true
+		}
+	}
+	return false
 }
 
 // すべての値が条件を満たせばtrueを返す。
-func ForAllBy[V any](slice []V, f func(V) bool) bool {
-	return iter.ForAllBy(iter.FromSlice(slice), f)
+func ForAllBy[V any](slice []V, f func(V) (bool, error)) (bool, error) {
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return false, err
+		}
+		if !ok {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // すべての値が一致したらtrueを返す。
-func ForAll[V comparable](slice []V, v V) bool {
-	return iter.ForAll(iter.FromSlice(slice), v)
+func ForAll[V comparable](slice []V, v V) (bool, error) {
+	for i := range slice {
+		if slice[i] != v {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // 他のスライスの値がひとつでも存在していたらtrueを返す。
 func ContainsAny[V comparable](slice []V, subset []V) bool {
-	return iter.ContainsAny(iter.FromSlice(slice), iter.FromSlice(subset))
+	for i := range subset {
+		for j := range slice {
+			if subset[i] == slice[j] {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // 他のスライスの値がすべて存在していたらtrueを返す。
 func ContainsAll[V comparable](slice []V, subset []V) bool {
-	return iter.ContainsAll(iter.FromSlice(slice), iter.FromSlice(subset))
+	for i := range subset {
+		ok := false
+		for j := range slice {
+			if subset[i] == slice[j] {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // 先頭が他のスライスと一致していたらtrueを返す。
 func StartsWith[V comparable](slice []V, subset []V) bool {
-	return iter.StartsWith(iter.FromSlice(slice), iter.FromSlice(subset))
+	if len(subset) > len(slice) {
+		return false
+	}
+	for i := range subset {
+		if subset[i] != slice[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // 終端が他のスライスと一致していたらtrueを返す。
 func EndsWith[V comparable](slice []V, subset []V) bool {
-	return iter.EndsWith(iter.FromSlice(slice), iter.FromSlice(subset))
+	if len(subset) > len(slice) {
+		return false
+	}
+	for i, j := len(subset)-1, len(slice)-1; i >= 0; i, j = i-1, j-1 {
+		if subset[i] != slice[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // ひとつめのoldをnewで置き換えたスライスを返す。
 func Replace[V comparable](slice []V, old V, new V) []V {
-	return iter.ToSlice(iter.Replace(iter.FromSlice(slice), old, new))
+	done := false
+	dst := make([]V, len(slice))
+	for i := range slice {
+		if !done && slice[i] == old {
+			dst[i] = new
+			done = true
+		} else {
+			dst[i] = slice[i]
+		}
+	}
+	return dst
 }
 
 // すべてのoldをnewで置き換えたスライスを返す。
 func ReplaceAll[V comparable](slice []V, old V, new V) []V {
-	return iter.ToSlice(iter.ReplaceAll(iter.FromSlice(slice), old, new))
+	dst := make([]V, len(slice))
+	for i := range slice {
+		if slice[i] == old {
+			dst[i] = new
+		} else {
+			dst[i] = slice[i]
+		}
+	}
+	return dst
 }
 
 // 条件を満たす値だけのスライスを返す。
-func FilterBy[V any](slice []V, f func(V) bool) []V {
-	return iter.ToSlice(iter.FilterBy(iter.FromSlice(slice), f))
+func FilterBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
+	dst := make([]V, 0, len(slice)/2)
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			dst = append(dst, slice[i])
+		}
+	}
+	return dst, nil
 }
 
 // 一致する値だけのスライスを返す。
 func Filter[V comparable](slice []V, v V) []V {
-	return iter.ToSlice(iter.Filter(iter.FromSlice(slice), v))
+	dst := make([]V, 0, len(slice)/2)
+	for i := range slice {
+		if slice[i] == v {
+			dst = append(dst, slice[i])
+		}
+	}
+	return dst
 }
 
 // 条件を満たす値を除いたスライスを返す。
-func FilterNotBy[V any](slice []V, f func(V) bool) []V {
-	return iter.ToSlice(iter.FilterNotBy(iter.FromSlice(slice), f))
+func FilterNotBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
+	dst := make([]V, 0, len(slice)/2)
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			dst = append(dst, slice[i])
+		}
+	}
+	return dst, nil
 }
 
 // 一致する値を除いたスライスを返す。
 func FilterNot[V comparable](slice []V, v V) []V {
-	return iter.ToSlice(iter.FilterNot(iter.FromSlice(slice), v))
+	dst := make([]V, 0, len(slice)/2)
+	for i := range slice {
+		if slice[i] != v {
+			dst = append(dst, slice[i])
+		}
+	}
+	return dst
 }
 
 // 条件を満たす値の直前で分割したふたつのスライスを返す。
-func SplitBy[V any](slice []V, f func(V) bool) ([]V, []V) {
-	iter1, iter2 := iter.SplitBy(iter.FromSlice(slice), f)
-	return iter.ToSlice(iter1), iter.ToSlice(iter2)
+func SplitBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if ok {
+			return slice[:i], slice[i:], nil
+		}
+	}
+	return slice, nil, nil
 }
 
 // 一致する値の直前で分割したふたつのスライスを返す。
 func Split[V comparable](slice []V, v V) ([]V, []V) {
-	iter1, iter2 := iter.Split(iter.FromSlice(slice), v)
-	return iter.ToSlice(iter1), iter.ToSlice(iter2)
+	for i := range slice {
+		if slice[i] == v {
+			return slice[:i], slice[i:]
+		}
+	}
+	return slice, nil
 }
 
 // 条件を満たす値の直後で分割したふたつのスライスを返す。
-func SplitAfterBy[V any](slice []V, f func(V) bool) ([]V, []V) {
-	iter1, iter2 := iter.SplitAfterBy(iter.FromSlice(slice), f)
-	return iter.ToSlice(iter1), iter.ToSlice(iter2)
+func SplitAfterBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if ok {
+			return slice[:i+1], slice[i+1:], nil
+		}
+	}
+	return slice, nil, nil
 }
 
 // 一致する値の直後で分割したふたつのスライスを返す。
-func SplitAfter[V comparable](slice []V, v V) ([]V, []V) {
-	iter1, iter2 := iter.SplitAfter(iter.FromSlice(slice), v)
-	return iter.ToSlice(iter1), iter.ToSlice(iter2)
+func SplitAfter[V comparable](slice []V, v V) ([]V, []V, error) {
+	for i := range slice {
+		if slice[i] == v {
+			return slice[:i+1], slice[i+1:], nil
+		}
+	}
+	return slice, nil, nil
 }
 
 // 条件を満たすスライスと満たさないスライスを返す。
-func PartitionBy[V any](slice []V, f func(V) bool) ([]V, []V) {
-	iter1, iter2 := iter.PartitionBy(iter.FromSlice(slice), f)
-	return iter.ToSlice(iter1), iter.ToSlice(iter2)
+func PartitionBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
+	dst1 := make([]V, 0, len(slice)/2)
+	dst2 := make([]V, 0, len(slice)/2)
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return nil, nil, err
+		}
+		if ok {
+			dst1 = append(dst1, slice[i])
+		} else {
+			dst2 = append(dst2, slice[i])
+		}
+	}
+	return dst1, dst2, nil
 }
 
 // 値の一致するスライスと一致しないスライスを返す。
 func Partition[V comparable](slice []V, v V) ([]V, []V) {
-	iter1, iter2 := iter.Partition(iter.FromSlice(slice), v)
-	return iter.ToSlice(iter1), iter.ToSlice(iter2)
+	dst1 := make([]V, 0, len(slice)/2)
+	dst2 := make([]V, 0, len(slice)/2)
+	for i := range slice {
+		if slice[i] == v {
+			dst1 = append(dst1, slice[i])
+		} else {
+			dst2 = append(dst2, slice[i])
+		}
+	}
+	return dst1, dst2
 }
 
 // 条件を満たし続ける先頭の値のスライスを返す。
-func TakeWhileBy[V any](slice []V, f func(V) bool) []V {
-	return iter.ToSlice(iter.TakeWhileBy(iter.FromSlice(slice), f))
+func TakeWhileBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			return slice[:i], nil
+		}
+	}
+	return slice, nil
 }
 
 // 一致し続ける先頭の値のスライスを返す。
 func TakeWhile[V comparable](slice []V, v V) []V {
-	return iter.ToSlice(iter.TakeWhile(iter.FromSlice(slice), v))
+	for i := range slice {
+		if slice[i] != v {
+			return slice[:i]
+		}
+	}
+	return slice
 }
 
 // 先頭n個の値のスライスを返す。
 func Take[V any](slice []V, n int) []V {
-	return iter.ToSlice(iter.Take(iter.FromSlice(slice), n))
+	if n > len(slice) {
+		return slice
+	}
+	return slice[:n]
 }
 
 // 条件を満たし続ける先頭の値を除いたスライスを返す。
-func DropWhileBy[V any](slice []V, f func(V) bool) []V {
-	return iter.ToSlice(iter.DropWhileBy(iter.FromSlice(slice), f))
+func DropWhileBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			return slice[i:], nil
+		}
+	}
+	return nil, nil
 }
 
 // 一致し続ける先頭の値を除いたスライスを返す。
 func DropWhile[V comparable](slice []V, v V) []V {
-	return iter.ToSlice(iter.DropWhile(iter.FromSlice(slice), v))
+	for i := range slice {
+		if slice[i] != v {
+			return slice[i:]
+		}
+	}
+	return nil
 }
 
 // 先頭n個の値を除いたスライスを返す。
 func Drop[V any](slice []V, n int) []V {
-	return iter.ToSlice(iter.Drop(iter.FromSlice(slice), n))
+	if n > len(slice) {
+		return nil
+	}
+	return slice[n:]
 }
 
 // 条件を満たし続ける先頭部分と残りの部分、ふたつのスライスを返す。
-func SpanBy[V any](slice []V, f func(V) bool) ([]V, []V) {
-	iter1, iter2 := iter.SpanBy(iter.FromSlice(slice), f)
-	return iter.ToSlice(iter1), iter.ToSlice(iter2)
+func SpanBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
+	for i := range slice {
+		ok, err := f(slice[i])
+		if err != nil {
+			return nil, nil, err
+		}
+		if !ok {
+			return slice[:i], slice[i:], nil
+		}
+	}
+	return slice, nil, nil
 }
 
 // 一致し続ける先頭部分と残りの部分、ふたつのスライスを返す。
 func Span[V comparable](slice []V, v V) ([]V, []V) {
-	iter1, iter2 := iter.Span(iter.FromSlice(slice), v)
-	return iter.ToSlice(iter1), iter.ToSlice(iter2)
+	for i := range slice {
+		if slice[i] != v {
+			return slice[:i], slice[i:]
+		}
+	}
+	return slice, nil
 }
 
 // ゼロ値を除いたスライスを返す。
 func Clean[V comparable](slice []V) []V {
-	return iter.ToSlice(iter.Clean(iter.FromSlice(slice)))
+	zero := *new(V)
+	dst := make([]V, 0, len(slice)/2)
+	for i := range slice {
+		if slice[i] == zero {
+			continue
+		}
+		dst = append(dst, slice[i])
+	}
+	return dst
 }
 
 // 重複を除いたスライスを返す。
 func Distinct[V comparable](slice []V) []V {
-	return iter.ToSlice(iter.Distinct(iter.FromSlice(slice)))
+	dst := make([]V, 0, len(slice)/2)
+	for i := range slice {
+		skip := false
+		for j := range dst {
+			if slice[i] == dst[j] {
+				skip = true
+			}
+		}
+		if skip {
+			continue
+		}
+		dst = append(dst, slice[i])
+	}
+	return dst
 }
 
 // 条件を満たす値を変換したスライスを返す。
-func Collect[V1 any, V2 any](slice []V1, f func(V1) (V2, bool)) []V2 {
-	return iter.ToSlice(iter.Collect(iter.FromSlice(slice), f))
+func Collect[V1 any, V2 any](slice []V1, f func(V1) (V2, bool, error)) ([]V2, error) {
+	dst := make([]V2, 0, len(slice)/2)
+	for i := range slice {
+		v2, ok, err := f(slice[i])
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			continue
+		}
+		dst = append(dst, v2)
+	}
+	return dst, nil
 }
 
 // 値と位置をペアにしたスライスを返す。
-func ZipWithIndex[T any](slice []T) []tuple.T2[T, int] {
-	return iter.ToSlice(iter.ZipWithIndex(iter.FromSlice(slice)))
+func ZipWithIndex[V any](slice []V) []tuple.T2[V, int] {
+	dst := make([]tuple.T2[V, int], len(slice))
+	for i := range slice {
+		dst = append(dst, tuple.NewT2(slice[i], i))
+	}
+	return dst
 }
 
 // ２つのスライスの同じ位置の値をペアにしたスライスを返す。
 func Zip2[V1 any, V2 any](slice1 []V1, slice2 []V2) []tuple.T2[V1, V2] {
-	return iter.ToSlice(iter.Zip2(iter.FromSlice(slice1), iter.FromSlice(slice2)))
+	n := len(slice1)
+	if n > len(slice2) {
+		n = len(slice2)
+	}
+	dst := make([]tuple.T2[V1, V2], n)
+	for i := 0; i < n; i++ {
+		dst = append(dst, tuple.NewT2(slice1[i], slice2[i]))
+	}
+	return dst
 }
 
 // ３つのスライスの同じ位置の値をペアにしたスライスを返す。
 func Zip3[V1 any, V2 any, V3 any](slice1 []V1, slice2 []V2, slice3 []V3) []tuple.T3[V1, V2, V3] {
-	return iter.ToSlice(iter.Zip3(iter.FromSlice(slice1), iter.FromSlice(slice2), iter.FromSlice(slice3)))
+	n := len(slice1)
+	if n > len(slice2) {
+		n = len(slice2)
+	}
+	if n > len(slice3) {
+		n = len(slice3)
+	}
+	dst := make([]tuple.T3[V1, V2, V3], n)
+	for i := 0; i < n; i++ {
+		dst = append(dst, tuple.NewT3(slice1[i], slice2[i], slice3[i]))
+	}
+	return dst
 }
 
 // ４つのスライスの同じ位置の値をペアにしたスライスを返す。
 func Zip4[V1 any, V2 any, V3 any, V4 any](slice1 []V1, slice2 []V2, slice3 []V3, slice4 []V4) []tuple.T4[V1, V2, V3, V4] {
-	return iter.ToSlice(iter.Zip4(iter.FromSlice(slice1), iter.FromSlice(slice2), iter.FromSlice(slice3), iter.FromSlice(slice4)))
+	n := len(slice1)
+	if n > len(slice2) {
+		n = len(slice2)
+	}
+	if n > len(slice3) {
+		n = len(slice3)
+	}
+	if n > len(slice4) {
+		n = len(slice4)
+	}
+	dst := make([]tuple.T4[V1, V2, V3, V4], n)
+	for i := 0; i < n; i++ {
+		dst = append(dst, tuple.NewT4(slice1[i], slice2[i], slice3[i], slice4[i]))
+	}
+	return dst
 }
 
 // ５つのスライスの同じ位置の値をペアにしたスライスを返す。
 func Zip5[V1 any, V2 any, V3 any, V4 any, V5 any](slice1 []V1, slice2 []V2, slice3 []V3, slice4 []V4, slice5 []V5) []tuple.T5[V1, V2, V3, V4, V5] {
-	return iter.ToSlice(iter.Zip5(iter.FromSlice(slice1), iter.FromSlice(slice2), iter.FromSlice(slice3), iter.FromSlice(slice4), iter.FromSlice(slice5)))
+	n := len(slice1)
+	if n > len(slice2) {
+		n = len(slice2)
+	}
+	if n > len(slice3) {
+		n = len(slice3)
+	}
+	if n > len(slice4) {
+		n = len(slice4)
+	}
+	if n > len(slice5) {
+		n = len(slice5)
+	}
+	dst := make([]tuple.T5[V1, V2, V3, V4, V5], n)
+	for i := 0; i < n; i++ {
+		dst = append(dst, tuple.NewT5(slice1[i], slice2[i], slice3[i], slice4[i], slice5[i]))
+	}
+	return dst
 }
 
 // ６つのスライスの同じ位置の値をペアにしたスライスを返す。
 func Zip6[V1 any, V2 any, V3 any, V4 any, V5 any, V6 any](slice1 []V1, slice2 []V2, slice3 []V3, slice4 []V4, slice5 []V5, slice6 []V6) []tuple.T6[V1, V2, V3, V4, V5, V6] {
-	return iter.ToSlice(iter.Zip6(iter.FromSlice(slice1), iter.FromSlice(slice2), iter.FromSlice(slice3), iter.FromSlice(slice4), iter.FromSlice(slice5), iter.FromSlice(slice6)))
+	n := len(slice1)
+	if n > len(slice2) {
+		n = len(slice2)
+	}
+	if n > len(slice3) {
+		n = len(slice3)
+	}
+	if n > len(slice4) {
+		n = len(slice4)
+	}
+	if n > len(slice5) {
+		n = len(slice5)
+	}
+	if n > len(slice6) {
+		n = len(slice6)
+	}
+	dst := make([]tuple.T6[V1, V2, V3, V4, V5, V6], n)
+	for i := 0; i < n; i++ {
+		dst = append(dst, tuple.NewT6(slice1[i], slice2[i], slice3[i], slice4[i], slice5[i], slice6[i]))
+	}
+	return dst
 }
 
 // 値のペアを分離して２つのスライスを返す。
@@ -466,8 +983,16 @@ func Unzip6[V1 any, V2 any, V3 any, V4 any, V5 any, V6 any](slice []tuple.T6[V1,
 }
 
 // 値ごとに関数の返すキーでグルーピングしたマップを返す。
-func GroupBy[K comparable, V any](slice []V, f func(V) K) map[K][]V {
-	return iter.GroupBy(iter.FromSlice(slice), f)
+func GroupBy[K comparable, V any](slice []V, f func(V) (K, error)) (map[K][]V, error) {
+	dst := map[K][]V{}
+	for i := range slice {
+		k, err := f(slice[i])
+		if err != nil {
+			return nil, err
+		}
+		dst[k] = append(dst[k], slice[i])
+	}
+	return dst, nil
 }
 
 // 平坦化したスライスを返す。
@@ -480,15 +1005,89 @@ func Flatten[V any](slice [][]V) []V {
 }
 
 // 値をスライスに変換し、それらを結合したスライスを返す。
-func FlatMap[V1, V2 any](slice []V1, f func(V1) []V2) []V2 {
+func FlatMap[V1, V2 any](slice []V1, f func(V1) ([]V2, error)) ([]V2, error) {
 	dst := make([]V2, 0, len(slice))
 	for i := range slice {
-		dst = append(dst, f(slice[i])...)
+		slice, err := f(slice[i])
+		if err != nil {
+			return nil, err
+		}
+		dst = append(dst, slice...)
 	}
-	return dst
+	return dst, nil
 }
 
 // 値のあいだにseparatorを挿入したスライスを返す。
 func Join[V any](slice []V, separator V) []V {
-	return Drop(FlatMap(slice, func(v V) []V { return []V{separator, v} }), 1)
+	dst := make([]V, 0, len(slice)*2)
+	for i := range slice {
+		dst = append(dst, separator, slice[i])
+	}
+	return dst[1:]
+}
+
+// 要素がn個になるまで先頭に関数の実行結果を挿入する。
+func PadBy[V any](slice []V, n int, f func(int) (V, error)) ([]V, error) {
+	if len(slice) >= n {
+		return slice, nil
+	}
+	left := make([]V, n-len(slice))
+	for i := 0; i < len(left); i++ {
+		v, err := f(i)
+		if err != nil {
+			return nil, err
+		}
+		left[i] = v
+	}
+	return append(left, slice...), nil
+}
+
+// 要素がn個になるまで先頭にvを挿入する。
+func Pad[V any](slice []V, n int, v V) []V {
+	if len(slice) >= n {
+		return slice
+	}
+	left := make([]V, n-len(slice))
+	for i := 0; i < len(left); i++ {
+		left[i] = v
+	}
+	return append(left, slice...)
+}
+
+// 要素がn個になるまで先頭にゼロ値を挿入する。
+func PadZero[V any](slice []V, n int) []V {
+	return Pad(slice, n, *new(V))
+}
+
+// 要素がn個になるまで末尾に関数の実行結果を挿入する。
+func PadRightBy[V any](slice []V, n int, f func(int) (V, error)) ([]V, error) {
+	if len(slice) >= n {
+		return slice, nil
+	}
+	right := make([]V, n-len(slice))
+	for i := 0; i < len(right); i++ {
+		v, err := f(len(slice) + i)
+		if err != nil {
+			return nil, err
+		}
+		right[i] = v
+	}
+	return append(slice, right...), nil
+}
+
+// 要素がn個になるまで末尾にvを挿入する。
+func PadRight[V any](slice []V, n int, v V) []V {
+	if len(slice) >= n {
+		return slice
+	}
+	right := make([]V, n-len(slice))
+	for i := 0; i < len(right); i++ {
+		right[i] = v
+	}
+	return append(slice, right...)
+}
+
+// 要素がn個になるまで末尾にゼロ値を挿入する。
+func PadZeroRight[V any](slice []V, n int) []V {
+	return PadRight(slice, n, *new(V))
 }

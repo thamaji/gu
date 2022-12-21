@@ -3,7 +3,39 @@ package slices
 import (
 	"github.com/thamaji/gu/iter"
 	"github.com/thamaji/gu/tuple"
+	"golang.org/x/exp/constraints"
 )
+
+// 範囲を指定してスライスをつくる。
+func Range[V constraints.Integer | constraints.Float](start V, stop V, step V) []V {
+	slice := make([]V, 0, int((stop-start)/step))
+	for cursor := start; cursor < stop; cursor += step {
+		slice = append(slice, cursor)
+	}
+	return slice
+}
+
+// 指定した値をn個複製してスライスをつくる。
+func Repeat[V any](n int, v V) []V {
+	slice := make([]V, n)
+	for i := 0; i < n; i++ {
+		slice[i] = v
+	}
+	return slice
+}
+
+// 指定した値をn個複製してスライスをつくる。
+func RepeatBy[V any](n int, f func(int) (V, error)) ([]V, error) {
+	slice := make([]V, n)
+	for i := 0; i < n; i++ {
+		v, err := f(i)
+		if err != nil {
+			return nil, err
+		}
+		slice[i] = v
+	}
+	return slice, nil
+}
 
 // 値からスライスをつくる。
 func From[T any](values ...T) []T {
@@ -54,15 +86,6 @@ func FromIter[V any](iter iter.Iter[V]) []V {
 			break
 		}
 		slice = append(slice, v)
-	}
-	return slice
-}
-
-// 関数をn回実行した結果からスライスをつくる。
-func FromFunc[V any](n int, f func(int) V) []V {
-	slice := make([]V, 0, n)
-	for i := 0; i < n; i++ {
-		slice = append(slice, f(i))
 	}
 	return slice
 }

@@ -6,7 +6,7 @@ import (
 )
 
 // 範囲を指定してイテレータをつくる。
-func FromRange[V constraints.Ordered](start V, stop V, step V) Iter[V] {
+func Range[V constraints.Ordered](start V, stop V, step V) Iter[V] {
 	cursor := start
 	return IterFunc[V](func() (V, bool) {
 		if cursor >= stop {
