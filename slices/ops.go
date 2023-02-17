@@ -828,7 +828,7 @@ func Zip2[V1 any, V2 any](slice1 []V1, slice2 []V2) []tuple.T2[V1, V2] {
 	}
 	dst := make([]tuple.T2[V1, V2], n)
 	for i := 0; i < n; i++ {
-		dst = append(dst, tuple.NewT2(slice1[i], slice2[i]))
+		dst[i] = tuple.NewT2(slice1[i], slice2[i])
 	}
 	return dst
 }
@@ -844,7 +844,7 @@ func Zip3[V1 any, V2 any, V3 any](slice1 []V1, slice2 []V2, slice3 []V3) []tuple
 	}
 	dst := make([]tuple.T3[V1, V2, V3], n)
 	for i := 0; i < n; i++ {
-		dst = append(dst, tuple.NewT3(slice1[i], slice2[i], slice3[i]))
+		dst[i] = tuple.NewT3(slice1[i], slice2[i], slice3[i])
 	}
 	return dst
 }
@@ -863,7 +863,7 @@ func Zip4[V1 any, V2 any, V3 any, V4 any](slice1 []V1, slice2 []V2, slice3 []V3,
 	}
 	dst := make([]tuple.T4[V1, V2, V3, V4], n)
 	for i := 0; i < n; i++ {
-		dst = append(dst, tuple.NewT4(slice1[i], slice2[i], slice3[i], slice4[i]))
+		dst[i] = tuple.NewT4(slice1[i], slice2[i], slice3[i], slice4[i])
 	}
 	return dst
 }
@@ -885,7 +885,7 @@ func Zip5[V1 any, V2 any, V3 any, V4 any, V5 any](slice1 []V1, slice2 []V2, slic
 	}
 	dst := make([]tuple.T5[V1, V2, V3, V4, V5], n)
 	for i := 0; i < n; i++ {
-		dst = append(dst, tuple.NewT5(slice1[i], slice2[i], slice3[i], slice4[i], slice5[i]))
+		dst[i] = tuple.NewT5(slice1[i], slice2[i], slice3[i], slice4[i], slice5[i])
 	}
 	return dst
 }
@@ -910,7 +910,7 @@ func Zip6[V1 any, V2 any, V3 any, V4 any, V5 any, V6 any](slice1 []V1, slice2 []
 	}
 	dst := make([]tuple.T6[V1, V2, V3, V4, V5, V6], n)
 	for i := 0; i < n; i++ {
-		dst = append(dst, tuple.NewT6(slice1[i], slice2[i], slice3[i], slice4[i], slice5[i], slice6[i]))
+		dst[i] = tuple.NewT6(slice1[i], slice2[i], slice3[i], slice4[i], slice5[i], slice6[i])
 	}
 	return dst
 }
