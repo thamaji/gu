@@ -3,6 +3,7 @@ package maps
 import (
 	"math/rand"
 
+	"github.com/thamaji/gu/must"
 	"github.com/thamaji/gu/tuple"
 	"golang.org/x/exp/constraints"
 )
@@ -32,6 +33,11 @@ func GetOrFunc[K comparable, V any](m map[K]V, k K, f func() (V, error)) (V, err
 		return v, nil
 	}
 	return f()
+}
+
+// 指定したキーの値を返す。無い場合は関数の実行結果を返す。実行中にエラーが起きた場合 panic する。
+func MustGetOrFunc[K comparable, V any](m map[K]V, k K, f func() (V, error)) V {
+	return must.Must1(GetOrFunc(m, k, f))
 }
 
 // 要素をすべてコピーしたマップを返す。
@@ -66,6 +72,11 @@ func ForEach[K comparable, V any](m map[K]V, f func(K, V) error) error {
 	return nil
 }
 
+// 値ごとに関数を実行する。実行中にエラーが起きた場合 panic する。
+func MustForEach[K comparable, V any](m map[K]V, f func(K, V) error) {
+	must.Must0(ForEach(m, f))
+}
+
 // 他のマップと関数で比較し、一致していたらtrueを返す。
 func EqualBy[K comparable, V any](m1 map[K]V, m2 map[K]V, f func(V, V) (bool, error)) (bool, error) {
 	if len(m1) != len(m2) {
@@ -86,6 +97,11 @@ func EqualBy[K comparable, V any](m1 map[K]V, m2 map[K]V, f func(V, V) (bool, er
 		}
 	}
 	return true, nil
+}
+
+// 他のマップと関数で比較し、一致していたらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustEqualBy[K comparable, V any](m1 map[K]V, m2 map[K]V, f func(V, V) (bool, error)) bool {
+	return must.Must1(EqualBy(m1, m2, f))
 }
 
 // 他のマップと一致していたらtrueを返す。
@@ -120,6 +136,11 @@ func CountBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (int, e
 	return c, nil
 }
 
+// 条件を満たす値の数を返す。実行中にエラーが起きた場合 panic する。
+func MustCountBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) int {
+	return must.Must1(CountBy(m, f))
+}
+
 // 一致する値の数を返す。
 func Count[K comparable, V comparable](m map[K]V, v V) int {
 	c := 0
@@ -144,6 +165,11 @@ func Map[K comparable, V1 any, V2 any](m map[K]V1, f func(K, V1) (V2, error)) (m
 	return m2, nil
 }
 
+// 値を変換したマップを返す。実行中にエラーが起きた場合 panic する。
+func MustMap[K comparable, V1 any, V2 any](m map[K]V1, f func(K, V1) (V2, error)) map[K]V2 {
+	return must.Must1(Map(m, f))
+}
+
 // 値を順に演算する。
 func Reduce[K comparable, V any](m map[K]V, f func(V, K, V) (V, error)) (V, error) {
 	head := true
@@ -161,6 +187,11 @@ func Reduce[K comparable, V any](m map[K]V, f func(V, K, V) (V, error)) (V, erro
 		}
 	}
 	return result, nil
+}
+
+// 値を順に演算する。実行中にエラーが起きた場合 panic する。
+func MustReduce[K comparable, V any](m map[K]V, f func(V, K, V) (V, error)) V {
+	return must.Must1(Reduce(m, f))
 }
 
 // 値の合計を返す。
@@ -200,6 +231,11 @@ func SumBy[K comparable, V1 any, V2 constraints.Ordered | constraints.Complex](m
 		sum += v2
 	}
 	return sum, nil
+}
+
+// 値を変換して合計を返す。実行中にエラーが起きた場合 panic する。
+func MustSumBy[K comparable, V1 any, V2 constraints.Ordered | constraints.Complex](m map[K]V1, f func(K, V1) (V2, error)) V2 {
+	return must.Must1(SumBy(m, f))
 }
 
 // 最大の値を返す。
@@ -244,6 +280,11 @@ func MaxBy[K comparable, V1 any, V2 constraints.Ordered](m map[K]V1, f func(K, V
 	return max, nil
 }
 
+// 値を変換して最大の値を返す。実行中にエラーが起きた場合 panic する。
+func MustMaxBy[K comparable, V1 any, V2 constraints.Ordered](m map[K]V1, f func(K, V1) (V2, error)) V2 {
+	return must.Must1(MaxBy(m, f))
+}
+
 // 最小の値を返す。
 func Min[K comparable, V constraints.Ordered](m map[K]V) V {
 	head := true
@@ -286,6 +327,11 @@ func MinBy[K comparable, V1 any, V2 constraints.Ordered](m map[K]V1, f func(K, V
 	return min, nil
 }
 
+// 値を変換して最小の値を返す。実行中にエラーが起きた場合 panic する。
+func MustMinBy[K comparable, V1 any, V2 constraints.Ordered](m map[K]V1, f func(K, V1) (V2, error)) V2 {
+	return must.Must1(MinBy(m, f))
+}
+
 // 初期値と値を順に演算する。
 func Fold[K comparable, V1 any, V2 any](m map[K]V1, v V2, f func(V2, K, V1) (V2, error)) (V2, error) {
 	var err error
@@ -296,6 +342,11 @@ func Fold[K comparable, V1 any, V2 any](m map[K]V1, v V2, f func(V2, K, V1) (V2,
 		}
 	}
 	return v, nil
+}
+
+// 初期値と値を順に演算する。実行中にエラーが起きた場合 panic する。
+func MustFold[K comparable, V1 any, V2 any](m map[K]V1, v V2, f func(V2, K, V1) (V2, error)) V2 {
+	return must.Must1(Fold(m, v, f))
 }
 
 // 条件を満たす値を返す。
@@ -310,6 +361,11 @@ func FindBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (V, bool
 		}
 	}
 	return *new(V), false, nil
+}
+
+// 条件を満たす値を返す。実行中にエラーが起きた場合 panic する。
+func MustFindBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (V, bool) {
+	return must.Must2(FindBy(m, f))
 }
 
 // 一致する値を返す。
@@ -336,6 +392,11 @@ func ExistsBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (bool,
 	return false, nil
 }
 
+// 条件を満たす値が存在したらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustExistsBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) bool {
+	return must.Must1(ExistsBy(m, f))
+}
+
 // 一致する値が存在したらtrueを返す。
 func Exists[K comparable, V comparable](m map[K]V, v V) bool {
 	for _, v1 := range m {
@@ -358,6 +419,11 @@ func ForAllBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (bool,
 		}
 	}
 	return true, nil
+}
+
+// すべての値が条件を満たせばtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustForAllBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) bool {
+	return must.Must1(ForAllBy(m, f))
 }
 
 // すべての値が一致したらtrueを返す。
@@ -413,6 +479,11 @@ func FilterBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (map[K
 	return dst, nil
 }
 
+// 条件を満たす値だけのマップを返す。実行中にエラーが起きた場合 panic する。
+func MustFilterBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) map[K]V {
+	return must.Must1(FilterBy(m, f))
+}
+
 // 一致する値だけのマップを返す。
 func Filter[K comparable, V comparable](m map[K]V, v V) map[K]V {
 	dst := make(map[K]V, len(m)/2)
@@ -437,6 +508,11 @@ func FilterNotBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (ma
 		}
 	}
 	return dst, nil
+}
+
+// 条件を満たす値を除いたマップを返す。実行中にエラーが起きた場合 panic する。
+func MustFilterNotBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) map[K]V {
+	return must.Must1(FilterNotBy(m, f))
 }
 
 // 一致する値を除いたマップを返す。
@@ -466,6 +542,11 @@ func PartitionBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (ma
 		}
 	}
 	return dst1, dst2, nil
+}
+
+// 条件を満たすマップと満たさないマップを返す。実行中にエラーが起きた場合 panic する。
+func MustPartitionBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (map[K]V, map[K]V) {
+	return must.Must2(PartitionBy(m, f))
 }
 
 // 値の一致するイテレータと一致しないイテレータを返す。
@@ -527,6 +608,11 @@ func Collect[K comparable, V1 any, V2 any](m map[K]V1, f func(K, V1) (V2, bool, 
 		dst[k] = v2
 	}
 	return dst, nil
+}
+
+// 条件を満たす値を変換したマップを返す。実行中にエラーが起きた場合 panic する。
+func MustCollect[K comparable, V1 any, V2 any](m map[K]V1, f func(K, V1) (V2, bool, error)) map[K]V2 {
+	return must.Must1(Collect(m, f))
 }
 
 // ２つのマップの同じキーの値をペアにしたマップを返す。
@@ -752,4 +838,9 @@ func GroupBy[K1 comparable, K2 comparable, V any](m map[K1]V, f func(K1, V) (K2,
 		dst[k2] = append(dst[k2], v)
 	}
 	return dst, nil
+}
+
+// 値ごとに関数の返すキーでグルーピングしたマップを返す。実行中にエラーが起きた場合 panic する。
+func MustGroupBy[K1 comparable, K2 comparable, V any](m map[K1]V, f func(K1, V) (K2, error)) map[K2][]V {
+	return must.Must1(GroupBy(m, f))
 }

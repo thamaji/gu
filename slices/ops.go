@@ -3,6 +3,7 @@ package slices
 import (
 	"math/rand"
 
+	"github.com/thamaji/gu/must"
 	"github.com/thamaji/gu/tuple"
 	"golang.org/x/exp/constraints"
 )
@@ -34,6 +35,11 @@ func GetOrFunc[V any](slice []V, index int, f func() (V, error)) (V, error) {
 		return slice[index], nil
 	}
 	return f()
+}
+
+// 指定した位置の要素を返す。無い場合は関数の実行結果を返す。実行中にエラーが起きた場合 panic する。
+func MustGetOrFunc[V any](slice []V, index int, f func() (V, error)) V {
+	return must.Must1(GetOrFunc(slice, index, f))
 }
 
 // 先頭の要素を返す。
@@ -126,6 +132,11 @@ func ForEach[V any](slice []V, f func(V) error) error {
 	return nil
 }
 
+// 値ごとに関数を実行する。実行中にエラーが起きた場合 panic する。
+func MustForEach[V any](slice []V, f func(V) error) {
+	must.Must0(ForEach(slice, f))
+}
+
 // 他のスライスと関数で比較し、一致していたらtrueを返す。
 func EqualBy[V any](slice1 []V, slice2 []V, f func(V, V) (bool, error)) (bool, error) {
 	if len(slice1) != len(slice2) {
@@ -141,6 +152,11 @@ func EqualBy[V any](slice1 []V, slice2 []V, f func(V, V) (bool, error)) (bool, e
 		}
 	}
 	return true, nil
+}
+
+// 他のスライスと関数で比較し、一致していたらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustEqualBy[V any](slice1 []V, slice2 []V, f func(V, V) (bool, error)) bool {
+	return must.Must1(EqualBy(slice1, slice2, f))
 }
 
 // 他のスライスと一致していたらtrueを返す。
@@ -169,6 +185,11 @@ func CountBy[V any](slice []V, f func(V) (bool, error)) (int, error) {
 		}
 	}
 	return c, nil
+}
+
+// 条件を満たす値の数を返す。実行中にエラーが起きた場合 panic する。
+func MustCountBy[V any](slice []V, f func(V) (bool, error)) int {
+	return must.Must1(CountBy(slice, f))
 }
 
 // 一致する値の数を返す。
@@ -204,6 +225,11 @@ func Map[V1 any, V2 any](slice []V1, f func(V1) (V2, error)) ([]V2, error) {
 	return dst, nil
 }
 
+// 値を変換したスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustMap[V1 any, V2 any](slice []V1, f func(V1) (V2, error)) []V2 {
+	return must.Must1(Map(slice, f))
+}
+
 // 値を順に演算する。
 func Reduce[V any](slice []V, f func(V, V) (V, error)) (V, error) {
 	var v V
@@ -218,6 +244,11 @@ func Reduce[V any](slice []V, f func(V, V) (V, error)) (V, error) {
 		}
 	}
 	return v, nil
+}
+
+// 値を順に演算する。実行中にエラーが起きた場合 panic する。
+func MustReduce[V any](slice []V, f func(V, V) (V, error)) V {
+	return must.Must1(Reduce(slice, f))
 }
 
 // 値の合計を演算する。
@@ -253,6 +284,11 @@ func SumBy[V1 any, V2 constraints.Ordered | constraints.Complex](slice []V1, f f
 	return sum, nil
 }
 
+// 値を変換して合計を演算する。実行中にエラーが起きた場合 panic する。
+func MustSumBy[V1 any, V2 constraints.Ordered | constraints.Complex](slice []V1, f func(V1) (V2, error)) V2 {
+	return must.Must1(SumBy(slice, f))
+}
+
 // 最大の値を返す。
 func Max[V constraints.Ordered](slice []V) V {
 	var max V
@@ -267,7 +303,7 @@ func Max[V constraints.Ordered](slice []V) V {
 	return max
 }
 
-// 値を変換して最大の値を返す
+// 値を変換して最大の値を返す。
 func MaxBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) (V2, error)) (V2, error) {
 	var max V2
 	var err error
@@ -290,6 +326,11 @@ func MaxBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) (V2, error)) (
 	return max, nil
 }
 
+// 値を変換して最大の値を返す。実行中にエラーが起きた場合 panic する。
+func MustMaxBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) (V2, error)) V2 {
+	return must.Must1(MaxBy(slice, f))
+}
+
 // 最小の値を返す。
 func Min[V constraints.Ordered](slice []V) V {
 	var min V
@@ -304,7 +345,7 @@ func Min[V constraints.Ordered](slice []V) V {
 	return min
 }
 
-// 値を変換して最小の値を返す
+// 値を変換して最小の値を返す。
 func MinBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) (V2, error)) (V2, error) {
 	var min V2
 	var err error
@@ -327,6 +368,11 @@ func MinBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) (V2, error)) (
 	return min, nil
 }
 
+// 値を変換して最小の値を返す。実行中にエラーが起きた場合 panic する。
+func MustMinBy[V1 any, V2 constraints.Ordered](slice []V1, f func(V1) (V2, error)) V2 {
+	return must.Must1(MinBy(slice, f))
+}
+
 // 初期値と値を順に演算する。
 func Fold[V1 any, V2 any](slice []V1, v V2, f func(V2, V1) (V2, error)) (V2, error) {
 	var err error
@@ -337,6 +383,11 @@ func Fold[V1 any, V2 any](slice []V1, v V2, f func(V2, V1) (V2, error)) (V2, err
 		}
 	}
 	return v, nil
+}
+
+// 初期値と値を順に演算する。実行中にエラーが起きた場合 panic する。
+func MustFold[V1 any, V2 any](slice []V1, v V2, f func(V2, V1) (V2, error)) V2 {
+	return must.Must1(Fold(slice, v, f))
 }
 
 // 条件を満たす最初の値の位置を返す。
@@ -351,6 +402,11 @@ func IndexBy[V any](slice []V, f func(V) (bool, error)) (int, error) {
 		}
 	}
 	return -1, nil
+}
+
+// 条件を満たす最初の値の位置を返す。実行中にエラーが起きた場合 panic する。
+func MustIndexBy[V any](slice []V, f func(V) (bool, error)) int {
+	return must.Must1(IndexBy(slice, f))
 }
 
 // 一致する最初の値の位置を返す。
@@ -377,6 +433,11 @@ func LastIndexBy[V any](slice []V, f func(V) (bool, error)) (int, error) {
 	return -1, nil
 }
 
+// 条件を満たす最後の値の位置を返す。実行中にエラーが起きた場合 panic する。
+func MustLastIndexBy[V any](slice []V, f func(V) (bool, error)) int {
+	return must.Must1(LastIndexBy(slice, f))
+}
+
 // 一致する最後の値の位置を返す。
 func LastIndex[V comparable](slice []V, v V) int {
 	for i := len(slice) - 1; i >= 0; i-- {
@@ -399,6 +460,11 @@ func FindBy[V any](slice []V, f func(V) (bool, error)) (V, bool, error) {
 		}
 	}
 	return *new(V), false, nil
+}
+
+// 条件を満たす値を返す。実行中にエラーが起きた場合 panic する。
+func MustFindBy[V any](slice []V, f func(V) (bool, error)) (V, bool) {
+	return must.Must2(FindBy(slice, f))
 }
 
 // 一致する値を返す。
@@ -425,6 +491,11 @@ func ExistsBy[V any](slice []V, f func(V) (bool, error)) (bool, error) {
 	return false, nil
 }
 
+// 条件を満たす値が存在したらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustExistsBy[V any](slice []V, f func(V) (bool, error)) bool {
+	return must.Must1(ExistsBy(slice, f))
+}
+
 // 一致する値が存在したらtrueを返す。
 func Exists[V comparable](slice []V, v V) bool {
 	for i := range slice {
@@ -449,14 +520,19 @@ func ForAllBy[V any](slice []V, f func(V) (bool, error)) (bool, error) {
 	return true, nil
 }
 
+// すべての値が条件を満たせばtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustForAllBy[V any](slice []V, f func(V) (bool, error)) bool {
+	return must.Must1(ForAllBy(slice, f))
+}
+
 // すべての値が一致したらtrueを返す。
-func ForAll[V comparable](slice []V, v V) (bool, error) {
+func ForAll[V comparable](slice []V, v V) bool {
 	for i := range slice {
 		if slice[i] != v {
-			return false, nil
+			return false
 		}
 	}
-	return true, nil
+	return true
 }
 
 // 他のスライスの値がひとつでも存在していたらtrueを返す。
@@ -557,6 +633,11 @@ func FilterBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
 	return dst, nil
 }
 
+// 条件を満たす値だけのスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustFilterBy[V any](slice []V, f func(V) (bool, error)) []V {
+	return must.Must1(FilterBy(slice, f))
+}
+
 // 一致する値だけのスライスを返す。
 func Filter[V comparable](slice []V, v V) []V {
 	dst := make([]V, 0, len(slice)/2)
@@ -581,6 +662,11 @@ func FilterNotBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
 		}
 	}
 	return dst, nil
+}
+
+// 条件を満たす値を除いたスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustFilterNotBy[V any](slice []V, f func(V) (bool, error)) []V {
+	return must.Must1(FilterNotBy(slice, f))
 }
 
 // 一致する値を除いたスライスを返す。
@@ -609,6 +695,11 @@ func SplitBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
 	return slice, nil, nil
 }
 
+// 条件を満たす値の直前で分割したふたつのスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustSplitBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V) {
+	return must.Must2(SplitBy(slice, f))
+}
+
 // 一致する値の直前で分割したふたつのスライスを返す。
 func Split[V comparable](slice []V, v V) ([]V, []V) {
 	for i := range slice {
@@ -634,6 +725,11 @@ func SplitAfterBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
 	return slice, nil, nil
 }
 
+// 条件を満たす値の直後で分割したふたつのスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustSplitAfterBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V) {
+	return must.Must2(SplitAfterBy(slice, f))
+}
+
 // 一致する値の直後で分割したふたつのスライスを返す。
 func SplitAfter[V comparable](slice []V, v V) ([]V, []V, error) {
 	for i := range slice {
@@ -642,6 +738,11 @@ func SplitAfter[V comparable](slice []V, v V) ([]V, []V, error) {
 		}
 	}
 	return slice, nil, nil
+}
+
+// 一致する値の直後で分割したふたつのスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustSplitAfter[V comparable](slice []V, v V) ([]V, []V) {
+	return must.Must2(SplitAfter(slice, v))
 }
 
 // 条件を満たすスライスと満たさないスライスを返す。
@@ -660,6 +761,11 @@ func PartitionBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
 		}
 	}
 	return dst1, dst2, nil
+}
+
+// 条件を満たすスライスと満たさないスライスを返す。
+func MustPartitionBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V) {
+	return must.Must2(PartitionBy(slice, f))
 }
 
 // 値の一致するスライスと一致しないスライスを返す。
@@ -688,6 +794,11 @@ func TakeWhileBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
 		}
 	}
 	return slice, nil
+}
+
+// 条件を満たし続ける先頭の値のスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustTakeWhileBy[V any](slice []V, f func(V) (bool, error)) []V {
+	return must.Must1(TakeWhileBy(slice, f))
 }
 
 // 一致し続ける先頭の値のスライスを返す。
@@ -722,6 +833,11 @@ func DropWhileBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
 	return nil, nil
 }
 
+// 条件を満たし続ける先頭の値を除いたスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustDropWhileBy[V any](slice []V, f func(V) (bool, error)) []V {
+	return must.Must1(DropWhileBy(slice, f))
+}
+
 // 一致し続ける先頭の値を除いたスライスを返す。
 func DropWhile[V comparable](slice []V, v V) []V {
 	for i := range slice {
@@ -752,6 +868,11 @@ func SpanBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
 		}
 	}
 	return slice, nil, nil
+}
+
+// 条件を満たし続ける先頭部分と残りの部分、ふたつのスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustSpanBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V) {
+	return must.Must2(SpanBy(slice, f))
 }
 
 // 一致し続ける先頭部分と残りの部分、ふたつのスライスを返す。
@@ -809,6 +930,11 @@ func Collect[V1 any, V2 any](slice []V1, f func(V1) (V2, bool, error)) ([]V2, er
 		dst = append(dst, v2)
 	}
 	return dst, nil
+}
+
+// 条件を満たす値を変換したスライスを返す。実行中にエラーが起きた場合 panic する。
+func MustCollect[V1 any, V2 any](slice []V1, f func(V1) (V2, bool, error)) []V2 {
+	return must.Must1(Collect(slice, f))
 }
 
 // 値と位置をペアにしたスライスを返す。
@@ -1003,6 +1129,11 @@ func GroupBy[K comparable, V any](slice []V, f func(V) (K, error)) (map[K][]V, e
 	return dst, nil
 }
 
+// 値ごとに関数の返すキーでグルーピングしたマップを返す。実行中にエラーが起きた場合 panic する。
+func MustGroupBy[K comparable, V any](slice []V, f func(V) (K, error)) map[K][]V {
+	return must.Must1(GroupBy(slice, f))
+}
+
 // 平坦化したスライスを返す。
 func Flatten[V any](slice [][]V) []V {
 	dst := make([]V, 0, len(slice))
@@ -1023,6 +1154,11 @@ func FlatMap[V1, V2 any](slice []V1, f func(V1) ([]V2, error)) ([]V2, error) {
 		dst = append(dst, slice...)
 	}
 	return dst, nil
+}
+
+// 値をスライスに変換し、それらを結合したスライスを返す。
+func MustFlatMap[V1, V2 any](slice []V1, f func(V1) ([]V2, error)) []V2 {
+	return must.Must1(FlatMap(slice, f))
 }
 
 // 値のあいだにseparatorを挿入したスライスを返す。
@@ -1048,6 +1184,11 @@ func PadBy[V any](slice []V, n int, f func(int) (V, error)) ([]V, error) {
 		left[i] = v
 	}
 	return append(left, slice...), nil
+}
+
+// 要素がn個になるまで先頭に関数の実行結果を挿入する。
+func MustPadBy[V any](slice []V, n int, f func(int) (V, error)) []V {
+	return must.Must1(PadBy(slice, n, f))
 }
 
 // 要素がn個になるまで先頭にvを挿入する。
@@ -1081,6 +1222,11 @@ func PadRightBy[V any](slice []V, n int, f func(int) (V, error)) ([]V, error) {
 		right[i] = v
 	}
 	return append(slice, right...), nil
+}
+
+// 要素がn個になるまで末尾に関数の実行結果を挿入する。
+func MustPadRightBy[V any](slice []V, n int, f func(int) (V, error)) []V {
+	return must.Must1(PadRightBy(slice, n, f))
 }
 
 // 要素がn個になるまで末尾にvを挿入する。
