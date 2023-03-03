@@ -1,7 +1,14 @@
 package must
 
 // エラーがあるときpanicにする。
-func Must[V1 any](v1 V1, err error) V1 {
+func Must0(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+// エラーがあるときpanicにする。
+func Must1[V1 any](v1 V1, err error) V1 {
 	if err != nil {
 		panic(err)
 	}
