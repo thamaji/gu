@@ -13,6 +13,11 @@ func Len[K comparable, V any](m map[K]V) int {
 	return len(m)
 }
 
+// 空のときtrueを返す。
+func IsEmpty[K comparable, V any](m map[K]V) bool {
+	return len(m) == 0
+}
+
 // 指定したキーの値を返す。
 func Get[K comparable, V any](m map[K]V, k K) (V, bool) {
 	v, ok := m[k]

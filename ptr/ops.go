@@ -14,6 +14,11 @@ func Len[V any](p *V) int {
 	return 1
 }
 
+// 空のときtrueを返す。
+func IsEmpty[V any](p *V) bool {
+	return p == nil
+}
+
 // 値を返す。
 func Get[V any](p *V) (V, bool) {
 	if p == nil {

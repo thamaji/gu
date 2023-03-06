@@ -13,6 +13,11 @@ func Len[V any](slice []V) int {
 	return len(slice)
 }
 
+// 空のときtrueを返す。
+func IsEmpty[V any](slice []V) bool {
+	return len(slice) == 0
+}
+
 // 指定した位置の要素を返す。
 func Get[V any](slice []V, index int) (V, bool) {
 	if index < len(slice) {

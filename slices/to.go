@@ -5,7 +5,7 @@ import (
 	"github.com/thamaji/gu/tuple"
 )
 
-// ポインタからイテレータをつくる。
+// スライスからイテレータをつくる。
 func ToIter[V any](slice []V) iter.Iter[V] {
 	return iter.FromSlice(slice)
 }
