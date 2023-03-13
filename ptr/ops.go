@@ -868,7 +868,7 @@ func Flatten[V any](p **V) *V {
 	return *p
 }
 
-// 値をイテレータに変換し、それらを結合したイテレータを返す。
+// 値をポインタに変換し、それらを結合したポインタを返す。
 func FlatMap[V1 any, V2 any](p *V1, f func(V1) (*V2, error)) (*V2, error) {
 	if p == nil {
 		return nil, nil
@@ -880,12 +880,12 @@ func FlatMap[V1 any, V2 any](p *V1, f func(V1) (*V2, error)) (*V2, error) {
 	return v2, nil
 }
 
-// 値をイテレータに変換し、それらを結合したイテレータを返す。実行中にエラーが起きた場合 panic する。
+// 値をポインタに変換し、それらを結合したポインタを返す。実行中にエラーが起きた場合 panic する。
 func MustFlatMap[V1 any, V2 any](p *V1, f func(V1) (*V2, error)) *V2 {
 	return must.Must1(FlatMap(p, f))
 }
 
-// 値のあいだにseparatorを挿入したイテレータを返す。
+// 値のあいだにseparatorを挿入したポインタを返す。
 func Join[V any](p *V, separator V) *V {
 	return p
 }
