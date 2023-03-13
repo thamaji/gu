@@ -1191,6 +1191,34 @@ func Join[V any](slice []V, separator V) []V {
 	return dst[1:]
 }
 
+// n個ごとのスライスを返す。
+func Grouped[V any](slice []V, n int) [][]V {
+	if n == 0 {
+		return nil
+	}
+	dst := make([][]V, 0, len(slice)/n+1)
+	for i := range slice {
+		if i%n == 0 {
+			dst = append(dst, make([]V, 0, n))
+		}
+		dst[len(dst)-1] = append(dst[len(dst)-1], slice[i])
+	}
+	return dst
+}
+
+// stepずつズラしたn個ごとのスライスを返す。
+func Sliding[V any](slice []V, n int, step int) [][]V {
+	dst := make([][]V, 0, len(slice)/step)
+	l, r := 0, n
+	for ; r < len(slice); l, r = l+step, r+step {
+		dst = append(dst, slice[l:r])
+	}
+	if l < len(slice) {
+		dst = append(dst, slice[l:])
+	}
+	return dst
+}
+
 // 要素がn個になるまで先頭に関数の実行結果を挿入する。
 func PadBy[V any](slice []V, n int, f func(int) (V, error)) ([]V, error) {
 	if len(slice) >= n {
