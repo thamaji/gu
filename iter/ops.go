@@ -1,6 +1,7 @@
 package iter
 
 import (
+	"github.com/thamaji/gu/must"
 	"github.com/thamaji/gu/tuple"
 	"golang.org/x/exp/constraints"
 )
@@ -20,6 +21,11 @@ func Len[V any](iter Iter[V]) (int, error) {
 	return c, nil
 }
 
+// 値の数を返す。実行中にエラーが起きた場合 panic する。
+func MustLen[V any](iter Iter[V]) int {
+	return must.Must1(Len(iter))
+}
+
 // 指定した位置の値を返す。
 func Get[V any](iter Iter[V], index int) (V, bool, error) {
 	i := 0
@@ -35,6 +41,11 @@ func Get[V any](iter Iter[V], index int) (V, bool, error) {
 	}
 }
 
+// 指定した位置の値を返す。実行中にエラーが起きた場合 panic する。
+func MustGet[V any](iter Iter[V], index int) (V, bool) {
+	return must.Must2(Get(iter, index))
+}
+
 // 指定した位置の値を返す。無い場合はvを返す。
 func GetOrElse[V any](iter Iter[V], index int, v V) (V, error) {
 	v, ok, err := Get(iter, index)
@@ -42,6 +53,39 @@ func GetOrElse[V any](iter Iter[V], index int, v V) (V, error) {
 		return *new(V), err
 	}
 	return v, nil
+}
+
+// 指定した位置の値を返す。無い場合はvを返す。実行中にエラーが起きた場合 panic する。
+func MustGetOrElse[V any](iter Iter[V], index int, v V) V {
+	return must.Must1(GetOrElse(iter, index, v))
+}
+
+// 指定した位置の値のポインタを返す。無い場合はnilを返す。
+func GetOrNil[V any](iter Iter[V], index int) (*V, error) {
+	v, ok, err := Get(iter, index)
+	if !ok {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// 指定した位置の値のポインタを返す。無い場合はnilを返す。実行中にエラーが起きた場合 panic する。
+func MustGetOrNil[V any](iter Iter[V], index int) *V {
+	return must.Must1(GetOrNil(iter, index))
+}
+
+// 指定した位置の値を返す。無い場合はゼロ値を返す。
+func GetOrZero[V any](iter Iter[V], index int) (V, error) {
+	v, ok, err := Get(iter, index)
+	if !ok {
+		return *new(V), err
+	}
+	return v, nil
+}
+
+// 指定した位置の値を返す。無い場合はゼロ値を返す。実行中にエラーが起きた場合 panic する。
+func MustGetOrZero[V any](iter Iter[V], index int) V {
+	return must.Must1(GetOrZero(iter, index))
 }
 
 // 指定した位置の要素を返す。無い場合は関数の実行結果を返す。
@@ -56,9 +100,19 @@ func GetOrFunc[V any](iter Iter[V], index int, f func() (V, error)) (V, error) {
 	return f()
 }
 
+// 指定した位置の要素を返す。無い場合は関数の実行結果を返す。実行中にエラーが起きた場合 panic する。
+func MustGetOrFunc[V any](iter Iter[V], index int, f func() (V, error)) V {
+	return must.Must1(GetOrFunc(iter, index, f))
+}
+
 // 先頭の値を返す。
 func GetFirst[V any](iter Iter[V]) (V, bool, error) {
 	return Get(iter, 0)
+}
+
+// 先頭の値を返す。実行中にエラーが起きた場合 panic する。
+func MustGetFirst[V any](iter Iter[V]) (V, bool) {
+	return must.Must2(GetFirst(iter))
 }
 
 // 先頭の値を返す。無い場合はvを返す。
@@ -68,6 +122,11 @@ func GetFirstOrElse[V any](iter Iter[V], v V) (V, error) {
 		return *new(V), err
 	}
 	return v, nil
+}
+
+// 先頭の値を返す。無い場合はvを返す。実行中にエラーが起きた場合 panic する。
+func MustGetFirstOrElse[V any](iter Iter[V], v V) V {
+	return must.Must1(GetFirstOrElse(iter, v))
 }
 
 // 終端の値を返す。
@@ -85,6 +144,11 @@ func GetLast[V any](iter Iter[V]) (V, bool, error) {
 	return v, ok, iter.Err()
 }
 
+// 終端の値を返す。実行中にエラーが起きた場合 panic する。
+func MustGetLast[V any](iter Iter[V]) (V, bool) {
+	return must.Must2(GetLast(iter))
+}
+
 // 終端の値を返す。無い場合はvを返す。
 func GetLastOrElse[V any](iter Iter[V], v V) (V, error) {
 	v, ok, err := GetLast(iter)
@@ -92,6 +156,11 @@ func GetLastOrElse[V any](iter Iter[V], v V) (V, error) {
 		return *new(V), err
 	}
 	return v, nil
+}
+
+// 終端の値を返す。無い場合はvを返す。実行中にエラーが起きた場合 panic する。
+func MustGetLastOrElse[V any](iter Iter[V], v V) V {
+	return must.Must1(GetLastOrElse(iter, v))
 }
 
 // イテレータの末尾に他のイテレータを結合する。
@@ -177,6 +246,11 @@ func ForEach[V any](iter Iter[V], f func(V) error) error {
 	}
 }
 
+// 値ごとに関数を実行する。実行中にエラーが起きた場合 panic する。
+func MustForEach[V any](iter Iter[V], f func(V) error) {
+	must.Must0(ForEach(iter, f))
+}
+
 // 他のイテレータと関数で比較し、一致していたらtrueを返す。
 func EqualBy[V any](iter1 Iter[V], iter2 Iter[V], f func(V, V) (bool, error)) (bool, error) {
 	for {
@@ -209,9 +283,19 @@ func EqualBy[V any](iter1 Iter[V], iter2 Iter[V], f func(V, V) (bool, error)) (b
 	}
 }
 
+// 他のイテレータと関数で比較し、一致していたらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustEqualBy[V any](iter1 Iter[V], iter2 Iter[V], f func(V, V) (bool, error)) bool {
+	return must.Must1(EqualBy(iter1, iter2, f))
+}
+
 // 他のイテレータと一致していたらtrueを返す。
 func Equal[V comparable](iter1 Iter[V], iter2 Iter[V]) (bool, error) {
 	return EqualBy(iter1, iter2, func(v1 V, v2 V) (bool, error) { return v1 == v2, nil })
+}
+
+// 他のイテレータと一致していたらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustEqual[V comparable](iter1 Iter[V], iter2 Iter[V]) bool {
+	return must.Must1(Equal(iter1, iter2))
 }
 
 // 条件を満たす値の数を返す。
@@ -219,9 +303,19 @@ func CountBy[V any](iter Iter[V], f func(V) (bool, error)) (int, error) {
 	return Len(FilterBy(iter, f))
 }
 
+// 条件を満たす値の数を返す。実行中にエラーが起きた場合 panic する。
+func MustCountBy[V any](iter Iter[V], f func(V) (bool, error)) int {
+	return must.Must1(CountBy(iter, f))
+}
+
 // 一致する値の数を返す。
 func Count[V comparable](iter Iter[V], v V) (int, error) {
 	return Len(Filter(iter, v))
+}
+
+// 一致する値の数を返す。実行中にエラーが起きた場合 panic する。
+func MustCount[V comparable](iter Iter[V], v V) int {
+	return must.Must1(Count(iter, v))
 }
 
 // 位置のイテレータを返す。
@@ -281,6 +375,11 @@ func Reduce[V any](iter Iter[V], f func(V, V) (V, error)) (V, error) {
 	return v, err
 }
 
+// 値を順に演算する。実行中にエラーが起きた場合 panic する。
+func MustReduce[V any](iter Iter[V], f func(V, V) (V, error)) V {
+	return must.Must1(Reduce(iter, f))
+}
+
 // 値の合計を演算する。
 func Sum[V constraints.Ordered | constraints.Complex](iter Iter[V]) (V, error) {
 	return Reduce(iter, func(sum V, v V) (V, error) {
@@ -288,9 +387,19 @@ func Sum[V constraints.Ordered | constraints.Complex](iter Iter[V]) (V, error) {
 	})
 }
 
+// 値の合計を演算する。実行中にエラーが起きた場合 panic する。
+func MustSum[V constraints.Ordered | constraints.Complex](iter Iter[V]) V {
+	return must.Must1(Sum(iter))
+}
+
 // 値を変換して合計を演算する。
 func SumBy[V1 any, V2 constraints.Ordered | constraints.Complex](iter Iter[V1], f func(V1) (V2, error)) (V2, error) {
 	return Sum(Map(iter, f))
+}
+
+// 値を変換して合計を演算する。実行中にエラーが起きた場合 panic する。
+func MustSumBy[V1 any, V2 constraints.Ordered | constraints.Complex](iter Iter[V1], f func(V1) (V2, error)) V2 {
+	return must.Must1(SumBy(iter, f))
 }
 
 // 最大の値を返す。
@@ -303,9 +412,19 @@ func Max[V constraints.Ordered](iter Iter[V]) (V, error) {
 	})
 }
 
-// 値を変換して最大の値を返す
+// 最大の値を返す。実行中にエラーが起きた場合 panic する。
+func MustMax[V constraints.Ordered](iter Iter[V]) V {
+	return must.Must1(Max(iter))
+}
+
+// 値を変換して最大の値を返す。
 func MaxBy[V1 any, V2 constraints.Ordered](iter Iter[V1], f func(V1) (V2, error)) (V2, error) {
 	return Max(Map(iter, f))
+}
+
+// 値を変換して最大の値を返す。実行中にエラーが起きた場合 panic する。
+func MustMaxBy[V1 any, V2 constraints.Ordered](iter Iter[V1], f func(V1) (V2, error)) V2 {
+	return must.Must1(MaxBy(iter, f))
 }
 
 // 最小の値を返す。
@@ -318,9 +437,19 @@ func Min[V constraints.Ordered](iter Iter[V]) (V, error) {
 	})
 }
 
-// 値を変換して最小の値を返す
+// 最小の値を返す。実行中にエラーが起きた場合 panic する。
+func MustMin[V constraints.Ordered](iter Iter[V]) V {
+	return must.Must1(Min(iter))
+}
+
+// 値を変換して最小の値を返す。
 func MinBy[V1 any, V2 constraints.Ordered](iter Iter[V1], f func(V1) (V2, error)) (V2, error) {
 	return Min(Map(iter, f))
+}
+
+// 値を変換して最小の値を返す。実行中にエラーが起きた場合 panic する。
+func MustMinBy[V1 any, V2 constraints.Ordered](iter Iter[V1], f func(V1) (V2, error)) V2 {
+	return must.Must1(MinBy(iter, f))
 }
 
 // 初期値と値を順に演算する。
@@ -342,6 +471,11 @@ func Fold[V1 any, V2 any](iter Iter[V1], v V2, f func(V2, V1) (V2, error)) (V2, 
 	return v, err
 }
 
+// 初期値と値を順に演算する。実行中にエラーが起きた場合 panic する。
+func MustFold[V1 any, V2 any](iter Iter[V1], v V2, f func(V2, V1) (V2, error)) V2 {
+	return must.Must1(Fold(iter, v, f))
+}
+
 // 条件を満たす最初の値の位置を返す。
 func IndexBy[V any](iter Iter[V], f func(V) (bool, error)) (int, error) {
 	i := 0
@@ -361,9 +495,19 @@ func IndexBy[V any](iter Iter[V], f func(V) (bool, error)) (int, error) {
 	}
 }
 
+// 条件を満たす最初の値の位置を返す。実行中にエラーが起きた場合 panic する。
+func MustIndexBy[V any](iter Iter[V], f func(V) (bool, error)) int {
+	return must.Must1(IndexBy(iter, f))
+}
+
 // 一致する最初の値の位置を返す。
 func Index[V comparable](iter Iter[V], v V) (int, error) {
 	return IndexBy(iter, func(v1 V) (bool, error) { return v1 == v, nil })
+}
+
+// 一致する最初の値の位置を返す。実行中にエラーが起きた場合 panic する。
+func MustIndex[V comparable](iter Iter[V], v V) int {
+	return must.Must1(Index(iter, v))
 }
 
 // 条件を満たす最後の値の位置を返す。
@@ -391,9 +535,19 @@ func LastIndexBy[V any](iter Iter[V], f func(V) (bool, error)) (int, error) {
 	return index, err
 }
 
+// 条件を満たす最後の値の位置を返す。実行中にエラーが起きた場合 panic する。
+func MustLastIndexBy[V any](iter Iter[V], f func(V) (bool, error)) int {
+	return must.Must1(LastIndexBy(iter, f))
+}
+
 // 一致する最後の値の位置を返す。
 func LastIndex[V comparable](iter Iter[V], v V) (int, error) {
 	return LastIndexBy(iter, func(v1 V) (bool, error) { return v1 == v, nil })
+}
+
+// 一致する最後の値の位置を返す。実行中にエラーが起きた場合 panic する。
+func MustLastIndex[V comparable](iter Iter[V], v V) int {
+	return must.Must1(LastIndex(iter, v))
 }
 
 // 条件を満たす値を返す。
@@ -413,9 +567,19 @@ func FindBy[V any](iter Iter[V], f func(V) (bool, error)) (V, bool, error) {
 	}
 }
 
+// 条件を満たす値を返す。実行中にエラーが起きた場合 panic する。
+func MustFindBy[V any](iter Iter[V], f func(V) (bool, error)) (V, bool) {
+	return must.Must2(FindBy(iter, f))
+}
+
 // 一致する値を返す。
 func Find[V comparable](iter Iter[V], v V) (V, bool, error) {
 	return FindBy(iter, func(v1 V) (bool, error) { return v1 == v, nil })
+}
+
+// 一致する値を返す。実行中にエラーが起きた場合 panic する。
+func MustFind[V comparable](iter Iter[V], v V) (V, bool) {
+	return must.Must2(Find(iter, v))
 }
 
 // 条件を満たす値が存在したらtrueを返す。
@@ -424,9 +588,19 @@ func ExistsBy[V any](iter Iter[V], f func(V) (bool, error)) (bool, error) {
 	return index >= 0, err
 }
 
+// 条件を満たす値が存在したらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustExistsBy[V any](iter Iter[V], f func(V) (bool, error)) bool {
+	return must.Must1(ExistsBy(iter, f))
+}
+
 // 一致する値が存在したらtrueを返す。
 func Exists[V comparable](iter Iter[V], v V) (bool, error) {
 	return ExistsBy(iter, func(v1 V) (bool, error) { return v1 == v, nil })
+}
+
+// 一致する値が存在したらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustExists[V comparable](iter Iter[V], v V) bool {
+	return must.Must1(Exists(iter, v))
 }
 
 // すべての値が条件を満たせばtrueを返す。
@@ -441,9 +615,19 @@ func ForAllBy[V any](iter Iter[V], f func(V) (bool, error)) (bool, error) {
 	return !ok, nil
 }
 
+// すべての値が条件を満たせばtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustForAllBy[V any](iter Iter[V], f func(V) (bool, error)) bool {
+	return must.Must1(ForAllBy(iter, f))
+}
+
 // すべての値が一致したらtrueを返す。
 func ForAll[V comparable](iter Iter[V], v V) (bool, error) {
 	return ForAllBy(iter, func(v1 V) (bool, error) { return v1 == v, nil })
+}
+
+// すべての値が一致したらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustForAll[V comparable](iter Iter[V], v V) bool {
+	return must.Must1(ForAll(iter, v))
 }
 
 // 他のイテレータの値がひとつでも存在していたらtrueを返す。
@@ -464,6 +648,11 @@ func ContainsAny[V comparable](iter Iter[V], subset Iter[V]) (bool, error) {
 			}
 		}
 	}
+}
+
+// 他のイテレータの値がひとつでも存在していたらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustContainsAny[V comparable](iter Iter[V], subset Iter[V]) bool {
+	return must.Must1(ContainsAny(iter, subset))
 }
 
 // 他のイテレータの値がすべて存在していたらtrueを返す。
@@ -489,6 +678,11 @@ func ContainsAll[V comparable](iter Iter[V], subset Iter[V]) (bool, error) {
 	}
 }
 
+// 他のイテレータの値がすべて存在していたらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustContainsAll[V comparable](iter Iter[V], subset Iter[V]) bool {
+	return must.Must1(ContainsAll(iter, subset))
+}
+
 // 先頭が他のイテレータと一致していたらtrueを返す。
 func StartsWith[V comparable](iter Iter[V], subset Iter[V]) (bool, error) {
 	for {
@@ -507,6 +701,11 @@ func StartsWith[V comparable](iter Iter[V], subset Iter[V]) (bool, error) {
 			return false, nil
 		}
 	}
+}
+
+// 先頭が他のイテレータと一致していたらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustStartsWith[V comparable](iter Iter[V], subset Iter[V]) bool {
+	return must.Must1(StartsWith(iter, subset))
 }
 
 // 終端が他のイテレータと一致していたらtrueを返す。
@@ -530,6 +729,11 @@ func EndsWith[V comparable](iter Iter[V], subset Iter[V]) (bool, error) {
 			i = 0
 		}
 	}
+}
+
+// 終端が他のイテレータと一致していたらtrueを返す。実行中にエラーが起きた場合 panic する。
+func MustEndsWith[V comparable](iter Iter[V], subset Iter[V]) bool {
+	return must.Must1(EndsWith(iter, subset))
 }
 
 // ひとつめのoldをnewで置き換えたイテレータを返す。
@@ -619,9 +823,19 @@ func SplitBy[V any](iter Iter[V], f func(V) (bool, error)) (Iter[V], Iter[V], er
 	}
 }
 
+// 条件を満たす値の直前で分割したふたつのイテレータを返す。実行中にエラーが起きた場合 panic する。
+func MustSplitBy[V any](iter Iter[V], f func(V) (bool, error)) (Iter[V], Iter[V]) {
+	return must.Must2(SplitBy(iter, f))
+}
+
 // 一致する値の直前で分割したふたつのイテレータを返す。
 func Split[V comparable](iter Iter[V], v V) (Iter[V], Iter[V], error) {
 	return SplitBy(iter, func(v1 V) (bool, error) { return v1 == v, nil })
+}
+
+// 一致する値の直前で分割したふたつのイテレータを返す。実行中にエラーが起きた場合 panic する。
+func MustSplit[V comparable](iter Iter[V], v V) (Iter[V], Iter[V]) {
+	return must.Must2(Split(iter, v))
 }
 
 // 条件を満たす値の直後で分割したふたつのイテレータを返す。
@@ -647,9 +861,19 @@ func SplitAfterBy[V any](iter Iter[V], f func(V) (bool, error)) (Iter[V], Iter[V
 	}
 }
 
+// 条件を満たす値の直後で分割したふたつのイテレータを返す。実行中にエラーが起きた場合 panic する。
+func MustSplitAfterBy[V any](iter Iter[V], f func(V) (bool, error)) (Iter[V], Iter[V]) {
+	return must.Must2(SplitAfterBy(iter, f))
+}
+
 // 一致する値の直後で分割したふたつのイテレータを返す。
 func SplitAfter[V comparable](iter Iter[V], v V) (Iter[V], Iter[V], error) {
 	return SplitAfterBy(iter, func(v1 V) (bool, error) { return v1 == v, nil })
+}
+
+// 一致する値の直後で分割したふたつのイテレータを返す。実行中にエラーが起きた場合 panic する。
+func MustSplitAfter[V comparable](iter Iter[V], v V) (Iter[V], Iter[V]) {
+	return must.Must2(SplitAfter(iter, v))
 }
 
 // 条件を満たすイテレータと満たさないイテレータを返す。
@@ -677,9 +901,19 @@ func PartitionBy[V any](iter Iter[V], f func(V) (bool, error)) (Iter[V], Iter[V]
 	return FromSlice(slice1), FromSlice(slice2), nil
 }
 
+// 条件を満たすイテレータと満たさないイテレータを返す。実行中にエラーが起きた場合 panic する。
+func MustPartitionBy[V any](iter Iter[V], f func(V) (bool, error)) (Iter[V], Iter[V]) {
+	return must.Must2(PartitionBy(iter, f))
+}
+
 // 値の一致するイテレータと一致しないイテレータを返す。
 func Partition[V comparable](iter Iter[V], v V) (Iter[V], Iter[V], error) {
 	return PartitionBy(iter, func(v1 V) (bool, error) { return v1 == v, nil })
+}
+
+// 値の一致するイテレータと一致しないイテレータを返す。実行中にエラーが起きた場合 panic する。
+func MustPartition[V comparable](iter Iter[V], v V) (Iter[V], Iter[V]) {
+	return must.Must2(Partition(iter, v))
 }
 
 // 条件を満たし続ける先頭の値のイテレータを返す。
@@ -795,9 +1029,19 @@ func SpanBy[V any](iter Iter[V], f func(V) (bool, error)) (Iter[V], Iter[V], err
 	}
 }
 
+// 条件を満たし続ける先頭部分と残りの部分、ふたつのイテレータを返す。実行中にエラーが起きた場合 panic する。
+func MustSpanBy[V any](iter Iter[V], f func(V) (bool, error)) (Iter[V], Iter[V]) {
+	return must.Must2(SpanBy(iter, f))
+}
+
 // 一致し続ける先頭部分と残りの部分、ふたつのイテレータを返す。
 func Span[V comparable](iter Iter[V], v V) (Iter[V], Iter[V], error) {
 	return SpanBy(iter, func(v1 V) (bool, error) { return v1 == v, nil })
+}
+
+// 一致し続ける先頭部分と残りの部分、ふたつのイテレータを返す。実行中にエラーが起きた場合 panic する。
+func MustSpan[V comparable](iter Iter[V], v V) (Iter[V], Iter[V]) {
+	return must.Must2(Span(iter, v))
 }
 
 // ゼロ値を除いたイテレータを返す。
@@ -1143,6 +1387,11 @@ func GroupBy[K comparable, V any](iter Iter[V], f func(V) (K, error)) (map[K][]V
 		}
 	}
 	return m, nil
+}
+
+// 値ごとに関数の返すキーでグルーピングしたマップを返す。実行中にエラーが起きた場合 panic する。
+func MustGroupBy[K comparable, V any](iter Iter[V], f func(V) (K, error)) map[K][]V {
+	return must.Must1(GroupBy(iter, f))
 }
 
 // 平坦化したイテレータを返す。
