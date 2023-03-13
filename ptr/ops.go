@@ -35,6 +35,14 @@ func GetOrElse[V any](p *V, v V) V {
 	return *p
 }
 
+// 値を返す。無い場合はゼロ値を返す。
+func GetOrZero[V any](p *V) V {
+	if p == nil {
+		return *new(V)
+	}
+	return *p
+}
+
 // 値を返す。無い場合は関数の実行結果を返す。
 func GetOrFunc[V any](p *V, f func() (V, error)) (V, error) {
 	if p == nil {

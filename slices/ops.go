@@ -34,6 +34,22 @@ func GetOrElse[V any](slice []V, index int, v V) V {
 	return v
 }
 
+// 指定した位置の要素のポインタを返す。無い場合はnilを返す。
+func GetOrNil[V any](slice []V, index int) *V {
+	if index < len(slice) {
+		return &slice[index]
+	}
+	return nil
+}
+
+// 指定した位置の要素を返す。無い場合はゼロ値を返す。
+func GetOrZero[V any](slice []V, index int) V {
+	if index < len(slice) {
+		return slice[index]
+	}
+	return *new(V)
+}
+
 // 指定した位置の要素を返す。無い場合は関数の実行結果を返す。
 func GetOrFunc[V any](slice []V, index int, f func() (V, error)) (V, error) {
 	if index < len(slice) {

@@ -32,6 +32,22 @@ func GetOrElse[K comparable, V any](m map[K]V, k K, v V) V {
 	return v
 }
 
+// 指定したキーの値のポインタを返す。無い場合はnilを返す。
+func GetOrNil[K comparable, V any](m map[K]V, k K) *V {
+	if v, ok := m[k]; ok {
+		return &v
+	}
+	return nil
+}
+
+// 指定したキーの値を返す。無い場合はゼロ値を返す。
+func GetOrZero[K comparable, V any](m map[K]V, k K) V {
+	if v, ok := m[k]; ok {
+		return v
+	}
+	return *new(V)
+}
+
 // 指定したキーの値を返す。無い場合は関数の実行結果を返す。
 func GetOrFunc[K comparable, V any](m map[K]V, k K, f func() (V, error)) (V, error) {
 	if v, ok := m[k]; ok {
