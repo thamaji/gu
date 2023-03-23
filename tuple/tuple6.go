@@ -1,6 +1,10 @@
 package tuple
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/gob"
+	"encoding/json"
+)
 
 func NewT6[V1, V2, V3, V4, V5, V6 any](v1 V1, v2 V2, v3 V3, v4 V4, v5 V5, v6 V6) T6[V1, V2, V3, V4, V5, V6] {
 	return T6[V1, V2, V3, V4, V5, V6]{v1, v2, v3, v4, v5, v6}
@@ -97,4 +101,94 @@ func (t *T6[V1, V2, V3, V4, V5, V6]) UnmarshalJSON(p []byte) error {
 	t.V6 = v6
 
 	return nil
+}
+
+func (t T6[V1, V2, V3, V4, V5, V6]) MarshalText() ([]byte, error) {
+	return json.Marshal(t)
+}
+
+func (t *T6[V1, V2, V3, V4, V5, V6]) UnmarshalText(data []byte) error {
+	return json.Unmarshal(data, t)
+}
+
+func (t *T6[V1, V2, V3, V4, V5, V6]) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+
+	if err := enc.Encode(t.V1); err != nil {
+		return []byte{}, err
+	}
+
+	if err := enc.Encode(t.V2); err != nil {
+		return []byte{}, err
+	}
+
+	if err := enc.Encode(t.V3); err != nil {
+		return []byte{}, err
+	}
+
+	if err := enc.Encode(t.V4); err != nil {
+		return []byte{}, err
+	}
+
+	if err := enc.Encode(t.V5); err != nil {
+		return []byte{}, err
+	}
+
+	if err := enc.Encode(t.V6); err != nil {
+		return []byte{}, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (t *T6[V1, V2, V3, V4, V5, V6]) UnmarshalBinary(data []byte) error {
+	dec := gob.NewDecoder(bytes.NewReader(data))
+
+	var v1 V1
+	if err := dec.Decode(&v1); err != nil {
+		return err
+	}
+
+	var v2 V2
+	if err := dec.Decode(&v2); err != nil {
+		return err
+	}
+
+	var v3 V3
+	if err := dec.Decode(&v3); err != nil {
+		return err
+	}
+
+	var v4 V4
+	if err := dec.Decode(&v4); err != nil {
+		return err
+	}
+
+	var v5 V5
+	if err := dec.Decode(&v5); err != nil {
+		return err
+	}
+
+	var v6 V6
+	if err := dec.Decode(&v6); err != nil {
+		return err
+	}
+
+	t.V1 = v1
+	t.V2 = v2
+	t.V3 = v3
+	t.V4 = v4
+	t.V5 = v5
+	t.V6 = v6
+
+	return nil
+}
+
+func (t *T6[V1, V2, V3, V4, V5, V6]) GobEncode() ([]byte, error) {
+	return t.MarshalBinary()
+}
+
+func (t *T6[V1, V2, V3, V4, V5, V6]) GobDecode(data []byte) error {
+	return t.UnmarshalBinary(data)
 }

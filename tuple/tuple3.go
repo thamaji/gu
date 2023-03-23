@@ -1,6 +1,10 @@
 package tuple
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/gob"
+	"encoding/json"
+)
 
 func NewT3[V1, V2, V3 any](v1 V1, v2 V2, v3 V3) T3[V1, V2, V3] {
 	return T3[V1, V2, V3]{v1, v2, v3}
@@ -61,4 +65,64 @@ func (t *T3[V1, V2, V3]) UnmarshalJSON(p []byte) error {
 	t.V3 = v3
 
 	return nil
+}
+
+func (t T3[V1, V2, V3]) MarshalText() ([]byte, error) {
+	return json.Marshal(t)
+}
+
+func (t *T3[V1, V2, V3]) UnmarshalText(data []byte) error {
+	return json.Unmarshal(data, t)
+}
+
+func (t *T3[V1, V2, V3]) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+
+	if err := enc.Encode(t.V1); err != nil {
+		return []byte{}, err
+	}
+
+	if err := enc.Encode(t.V2); err != nil {
+		return []byte{}, err
+	}
+
+	if err := enc.Encode(t.V3); err != nil {
+		return []byte{}, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (t *T3[V1, V2, V3]) UnmarshalBinary(data []byte) error {
+	dec := gob.NewDecoder(bytes.NewReader(data))
+
+	var v1 V1
+	if err := dec.Decode(&v1); err != nil {
+		return err
+	}
+
+	var v2 V2
+	if err := dec.Decode(&v2); err != nil {
+		return err
+	}
+
+	var v3 V3
+	if err := dec.Decode(&v3); err != nil {
+		return err
+	}
+
+	t.V1 = v1
+	t.V2 = v2
+	t.V3 = v3
+
+	return nil
+}
+
+func (t *T3[V1, V2, V3]) GobEncode() ([]byte, error) {
+	return t.MarshalBinary()
+}
+
+func (t *T3[V1, V2, V3]) GobDecode(data []byte) error {
+	return t.UnmarshalBinary(data)
 }
