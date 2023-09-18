@@ -136,7 +136,7 @@ func Sample[V any](slice []V, r *rand.Rand) V {
 
 // 逆順にしたスライスを返す。
 func Reverse[S ~[]V, V any](slice []V) S {
-	dst := make([]V, 0, len(slice))
+	dst := make(S, 0, len(slice))
 	for i := len(slice) - 1; i >= 0; i-- {
 		dst = append(dst, slice[i])
 	}
@@ -1199,7 +1199,7 @@ func Grouped[S ~[]V, V any](slice S, n int) []S {
 	dst := make([]S, 0, len(slice)/n+1)
 	for i := range slice {
 		if i%n == 0 {
-			dst = append(dst, make([]V, 0, n))
+			dst = append(dst, make(S, 0, n))
 		}
 		dst[len(dst)-1] = append(dst[len(dst)-1], slice[i])
 	}
@@ -1224,7 +1224,7 @@ func PadBy[S ~[]V, V any](slice S, n int, f func(int) (V, error)) (S, error) {
 	if len(slice) >= n {
 		return slice, nil
 	}
-	left := make([]V, n-len(slice))
+	left := make(S, n-len(slice))
 	for i := 0; i < len(left); i++ {
 		v, err := f(i)
 		if err != nil {
@@ -1245,7 +1245,7 @@ func Pad[S ~[]V, V any](slice S, n int, v V) S {
 	if len(slice) >= n {
 		return slice
 	}
-	left := make([]V, n-len(slice))
+	left := make(S, n-len(slice))
 	for i := 0; i < len(left); i++ {
 		left[i] = v
 	}
@@ -1262,7 +1262,7 @@ func PadRightBy[S ~[]V, V any](slice S, n int, f func(int) (V, error)) (S, error
 	if len(slice) >= n {
 		return slice, nil
 	}
-	right := make([]V, n-len(slice))
+	right := make(S, n-len(slice))
 	for i := 0; i < len(right); i++ {
 		v, err := f(len(slice) + i)
 		if err != nil {

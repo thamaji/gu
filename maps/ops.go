@@ -62,8 +62,8 @@ func MustGetOrFunc[K comparable, V any](m map[K]V, k K, f func() (V, error)) V {
 }
 
 // 要素をすべてコピーしたマップを返す。
-func Clone[K comparable, V any](m map[K]V) map[K]V {
-	dst := make(map[K]V, len(m))
+func Clone[M ~map[K]V, K comparable, V any](m M) M {
+	dst := make(M, len(m))
 	for k, v := range m {
 		dst[k] = v
 	}
@@ -458,9 +458,9 @@ func ForAll[K comparable, V comparable](m map[K]V, v V) bool {
 }
 
 // ひとつめのoldをnewで置き換えたマップを返す。
-func Replace[K comparable, V comparable](m map[K]V, old V, new V) map[K]V {
+func Replace[M ~map[K]V, K comparable, V comparable](m M, old V, new V) M {
 	done := false
-	dst := make(map[K]V, len(m))
+	dst := make(M, len(m))
 	for k, v := range m {
 		if !done && v == old {
 			dst[k] = new
@@ -473,8 +473,8 @@ func Replace[K comparable, V comparable](m map[K]V, old V, new V) map[K]V {
 }
 
 // すべてのoldをnewで置き換えたマップを返す。
-func ReplaceAll[K comparable, V comparable](m map[K]V, old V, new V) map[K]V {
-	dst := make(map[K]V, len(m))
+func ReplaceAll[M ~map[K]V, K comparable, V comparable](m M, old V, new V) M {
+	dst := make(M, len(m))
 	for k, v := range m {
 		if v == old {
 			dst[k] = new
@@ -486,8 +486,8 @@ func ReplaceAll[K comparable, V comparable](m map[K]V, old V, new V) map[K]V {
 }
 
 // 条件を満たす値だけのマップを返す。
-func FilterBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (map[K]V, error) {
-	dst := make(map[K]V, len(m)/2)
+func FilterBy[M ~map[K]V, K comparable, V any](m M, f func(K, V) (bool, error)) (M, error) {
+	dst := make(M, len(m)/2)
 	for k, v := range m {
 		ok, err := f(k, v)
 		if err != nil {
@@ -501,13 +501,13 @@ func FilterBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (map[K
 }
 
 // 条件を満たす値だけのマップを返す。実行中にエラーが起きた場合 panic する。
-func MustFilterBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) map[K]V {
+func MustFilterBy[M ~map[K]V, K comparable, V any](m M, f func(K, V) (bool, error)) M {
 	return must.Must1(FilterBy(m, f))
 }
 
 // 一致する値だけのマップを返す。
-func Filter[K comparable, V comparable](m map[K]V, v V) map[K]V {
-	dst := make(map[K]V, len(m)/2)
+func Filter[M ~map[K]V, K comparable, V comparable](m M, v V) M {
+	dst := make(M, len(m)/2)
 	for k, v1 := range m {
 		if v1 == v {
 			dst[k] = v1
@@ -517,8 +517,8 @@ func Filter[K comparable, V comparable](m map[K]V, v V) map[K]V {
 }
 
 // 条件を満たす値を除いたマップを返す。
-func FilterNotBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (map[K]V, error) {
-	dst := make(map[K]V, len(m)/2)
+func FilterNotBy[M ~map[K]V, K comparable, V any](m M, f func(K, V) (bool, error)) (M, error) {
+	dst := make(M, len(m)/2)
 	for k, v := range m {
 		ok, err := f(k, v)
 		if err != nil {
@@ -532,13 +532,13 @@ func FilterNotBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (ma
 }
 
 // 条件を満たす値を除いたマップを返す。実行中にエラーが起きた場合 panic する。
-func MustFilterNotBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) map[K]V {
+func MustFilterNotBy[M ~map[K]V, K comparable, V any](m M, f func(K, V) (bool, error)) M {
 	return must.Must1(FilterNotBy(m, f))
 }
 
 // 一致する値を除いたマップを返す。
-func FilterNot[K comparable, V comparable](m map[K]V, v V) map[K]V {
-	dst := make(map[K]V, len(m)/2)
+func FilterNot[M ~map[K]V, K comparable, V comparable](m M, v V) M {
+	dst := make(M, len(m)/2)
 	for k, v1 := range m {
 		if v1 != v {
 			dst[k] = v1
@@ -548,9 +548,9 @@ func FilterNot[K comparable, V comparable](m map[K]V, v V) map[K]V {
 }
 
 // 条件を満たすマップと満たさないマップを返す。
-func PartitionBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (map[K]V, map[K]V, error) {
-	dst1 := make(map[K]V, len(m)/2)
-	dst2 := make(map[K]V, len(m)/2)
+func PartitionBy[M ~map[K]V, K comparable, V any](m M, f func(K, V) (bool, error)) (M, M, error) {
+	dst1 := make(M, len(m)/2)
+	dst2 := make(M, len(m)/2)
 	for k, v := range m {
 		ok, err := f(k, v)
 		if err != nil {
@@ -566,14 +566,14 @@ func PartitionBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (ma
 }
 
 // 条件を満たすマップと満たさないマップを返す。実行中にエラーが起きた場合 panic する。
-func MustPartitionBy[K comparable, V any](m map[K]V, f func(K, V) (bool, error)) (map[K]V, map[K]V) {
+func MustPartitionBy[M ~map[K]V, K comparable, V any](m M, f func(K, V) (bool, error)) (M, M) {
 	return must.Must2(PartitionBy(m, f))
 }
 
 // 値の一致するイテレータと一致しないイテレータを返す。
-func Partition[K comparable, V comparable](m map[K]V, v V) (map[K]V, map[K]V) {
-	dst1 := make(map[K]V, len(m)/2)
-	dst2 := make(map[K]V, len(m)/2)
+func Partition[M ~map[K]V, K comparable, V comparable](m M, v V) (M, M) {
+	dst1 := make(M, len(m)/2)
+	dst2 := make(M, len(m)/2)
 	for k, v1 := range m {
 		if v1 == v {
 			dst1[k] = v1
@@ -585,9 +585,9 @@ func Partition[K comparable, V comparable](m map[K]V, v V) (map[K]V, map[K]V) {
 }
 
 // ゼロ値を除いたマップを返す。
-func Clean[K comparable, V comparable](m map[K]V) map[K]V {
+func Clean[M ~map[K]V, K comparable, V comparable](m M) M {
 	zero := *new(V)
-	dst := make(map[K]V, len(m)/2)
+	dst := make(M, len(m)/2)
 	for k, v := range m {
 		if v == zero {
 			continue
@@ -598,8 +598,8 @@ func Clean[K comparable, V comparable](m map[K]V) map[K]V {
 }
 
 // 重複を除いたマップを返す。
-func Distinct[K comparable, V comparable](m map[K]V) map[K]V {
-	dst := make(map[K]V, len(m)/2)
+func Distinct[M ~map[K]V, K comparable, V comparable](m M) M {
+	dst := make(M, len(m)/2)
 	for k, v := range m {
 		skip := false
 		for _, v2 := range dst {
