@@ -96,23 +96,23 @@ func GetLastOrElse[V any](slice []V, v V) V {
 }
 
 // スライスの末尾に他のスライスを結合する。
-func Concat[V any](slice1 []V, slice2 []V) []V {
+func Concat[S ~[]V, V any](slice1 S, slice2 []V) S {
 	return append(slice1, slice2...)
 }
 
 // スライスの末尾に値を追加する。
-func Append[V any](slice []V, v ...V) []V {
+func Append[S ~[]V, V any](slice S, v ...V) S {
 	return append(slice, v...)
 }
 
 // 指定した位置に値を追加する。
-func Insert[V any](slice []V, index int, v ...V) []V {
+func Insert[S ~[]V, V any](slice S, index int, v ...V) S {
 	return append(slice[:index], append(v, slice[index:]...)...)
 }
 
 // 指定した位置の要素を削除する。
-func Remove[V any](slice []V, index int) []V {
-	dst := make([]V, 0, len(slice)-1)
+func Remove[S ~[]V, V any](slice S, index int) S {
+	dst := make(S, 0, len(slice)-1)
 	for i := range slice {
 		if i == index {
 			continue
@@ -123,8 +123,8 @@ func Remove[V any](slice []V, index int) []V {
 }
 
 // 要素をすべてコピーしたスライスを返す。
-func Clone[V any](slice []V) []V {
-	clone := make([]V, len(slice))
+func Clone[S ~[]V, V any](slice S) S {
+	clone := make(S, len(slice))
 	copy(clone, slice)
 	return clone
 }
@@ -135,7 +135,7 @@ func Sample[V any](slice []V, r *rand.Rand) V {
 }
 
 // 逆順にしたスライスを返す。
-func Reverse[V any](slice []V) []V {
+func Reverse[S ~[]V, V any](slice []V) S {
 	dst := make([]V, 0, len(slice))
 	for i := len(slice) - 1; i >= 0; i-- {
 		dst = append(dst, slice[i])
@@ -612,9 +612,9 @@ func EndsWith[V comparable](slice []V, subset []V) bool {
 }
 
 // ひとつめのoldをnewで置き換えたスライスを返す。
-func Replace[V comparable](slice []V, old V, new V) []V {
+func Replace[S ~[]V, V comparable](slice S, old V, new V) S {
 	done := false
-	dst := make([]V, len(slice))
+	dst := make(S, len(slice))
 	for i := range slice {
 		if !done && slice[i] == old {
 			dst[i] = new
@@ -627,8 +627,8 @@ func Replace[V comparable](slice []V, old V, new V) []V {
 }
 
 // すべてのoldをnewで置き換えたスライスを返す。
-func ReplaceAll[V comparable](slice []V, old V, new V) []V {
-	dst := make([]V, len(slice))
+func ReplaceAll[S ~[]V, V comparable](slice S, old V, new V) S {
+	dst := make(S, len(slice))
 	for i := range slice {
 		if slice[i] == old {
 			dst[i] = new
@@ -640,8 +640,8 @@ func ReplaceAll[V comparable](slice []V, old V, new V) []V {
 }
 
 // 条件を満たす値だけのスライスを返す。
-func FilterBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
-	dst := make([]V, 0, len(slice)/2)
+func FilterBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, error) {
+	dst := make(S, 0, len(slice)/2)
 	for i := range slice {
 		ok, err := f(slice[i])
 		if err != nil {
@@ -655,13 +655,13 @@ func FilterBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
 }
 
 // 条件を満たす値だけのスライスを返す。実行中にエラーが起きた場合 panic する。
-func MustFilterBy[V any](slice []V, f func(V) (bool, error)) []V {
+func MustFilterBy[S ~[]V, V any](slice S, f func(V) (bool, error)) S {
 	return must.Must1(FilterBy(slice, f))
 }
 
 // 一致する値だけのスライスを返す。
-func Filter[V comparable](slice []V, v V) []V {
-	dst := make([]V, 0, len(slice)/2)
+func Filter[S ~[]V, V comparable](slice S, v V) S {
+	dst := make(S, 0, len(slice)/2)
 	for i := range slice {
 		if slice[i] == v {
 			dst = append(dst, slice[i])
@@ -671,8 +671,8 @@ func Filter[V comparable](slice []V, v V) []V {
 }
 
 // 条件を満たす値を除いたスライスを返す。
-func FilterNotBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
-	dst := make([]V, 0, len(slice)/2)
+func FilterNotBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, error) {
+	dst := make(S, 0, len(slice)/2)
 	for i := range slice {
 		ok, err := f(slice[i])
 		if err != nil {
@@ -686,13 +686,13 @@ func FilterNotBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
 }
 
 // 条件を満たす値を除いたスライスを返す。実行中にエラーが起きた場合 panic する。
-func MustFilterNotBy[V any](slice []V, f func(V) (bool, error)) []V {
+func MustFilterNotBy[S ~[]V, V any](slice S, f func(V) (bool, error)) S {
 	return must.Must1(FilterNotBy(slice, f))
 }
 
 // 一致する値を除いたスライスを返す。
-func FilterNot[V comparable](slice []V, v V) []V {
-	dst := make([]V, 0, len(slice)/2)
+func FilterNot[S ~[]V, V comparable](slice S, v V) S {
+	dst := make(S, 0, len(slice)/2)
 	for i := range slice {
 		if slice[i] != v {
 			dst = append(dst, slice[i])
@@ -702,7 +702,7 @@ func FilterNot[V comparable](slice []V, v V) []V {
 }
 
 // 条件を満たす値の直前で分割したふたつのスライスを返す。
-func SplitBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
+func SplitBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, S, error) {
 	for i := range slice {
 		ok, err := f(slice[i])
 		if err != nil {
@@ -717,12 +717,12 @@ func SplitBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
 }
 
 // 条件を満たす値の直前で分割したふたつのスライスを返す。実行中にエラーが起きた場合 panic する。
-func MustSplitBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V) {
+func MustSplitBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, S) {
 	return must.Must2(SplitBy(slice, f))
 }
 
 // 一致する値の直前で分割したふたつのスライスを返す。
-func Split[V comparable](slice []V, v V) ([]V, []V) {
+func Split[S ~[]V, V comparable](slice S, v V) (S, S) {
 	for i := range slice {
 		if slice[i] == v {
 			return slice[:i], slice[i:]
@@ -732,7 +732,7 @@ func Split[V comparable](slice []V, v V) ([]V, []V) {
 }
 
 // 条件を満たす値の直後で分割したふたつのスライスを返す。
-func SplitAfterBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
+func SplitAfterBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, S, error) {
 	for i := range slice {
 		ok, err := f(slice[i])
 		if err != nil {
@@ -747,12 +747,12 @@ func SplitAfterBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
 }
 
 // 条件を満たす値の直後で分割したふたつのスライスを返す。実行中にエラーが起きた場合 panic する。
-func MustSplitAfterBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V) {
+func MustSplitAfterBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, S) {
 	return must.Must2(SplitAfterBy(slice, f))
 }
 
 // 一致する値の直後で分割したふたつのスライスを返す。
-func SplitAfter[V comparable](slice []V, v V) ([]V, []V, error) {
+func SplitAfter[S ~[]V, V comparable](slice S, v V) (S, S, error) {
 	for i := range slice {
 		if slice[i] == v {
 			return slice[:i+1], slice[i+1:], nil
@@ -762,14 +762,14 @@ func SplitAfter[V comparable](slice []V, v V) ([]V, []V, error) {
 }
 
 // 一致する値の直後で分割したふたつのスライスを返す。実行中にエラーが起きた場合 panic する。
-func MustSplitAfter[V comparable](slice []V, v V) ([]V, []V) {
+func MustSplitAfter[S ~[]V, V comparable](slice S, v V) (S, S) {
 	return must.Must2(SplitAfter(slice, v))
 }
 
 // 条件を満たすスライスと満たさないスライスを返す。
-func PartitionBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
-	dst1 := make([]V, 0, len(slice)/2)
-	dst2 := make([]V, 0, len(slice)/2)
+func PartitionBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, S, error) {
+	dst1 := make(S, 0, len(slice)/2)
+	dst2 := make(S, 0, len(slice)/2)
 	for i := range slice {
 		ok, err := f(slice[i])
 		if err != nil {
@@ -785,14 +785,14 @@ func PartitionBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
 }
 
 // 条件を満たすスライスと満たさないスライスを返す。
-func MustPartitionBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V) {
+func MustPartitionBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, S) {
 	return must.Must2(PartitionBy(slice, f))
 }
 
 // 値の一致するスライスと一致しないスライスを返す。
-func Partition[V comparable](slice []V, v V) ([]V, []V) {
-	dst1 := make([]V, 0, len(slice)/2)
-	dst2 := make([]V, 0, len(slice)/2)
+func Partition[S ~[]V, V comparable](slice S, v V) (S, S) {
+	dst1 := make(S, 0, len(slice)/2)
+	dst2 := make(S, 0, len(slice)/2)
 	for i := range slice {
 		if slice[i] == v {
 			dst1 = append(dst1, slice[i])
@@ -804,7 +804,7 @@ func Partition[V comparable](slice []V, v V) ([]V, []V) {
 }
 
 // 条件を満たし続ける先頭の値のスライスを返す。
-func TakeWhileBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
+func TakeWhileBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, error) {
 	for i := range slice {
 		ok, err := f(slice[i])
 		if err != nil {
@@ -818,12 +818,12 @@ func TakeWhileBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
 }
 
 // 条件を満たし続ける先頭の値のスライスを返す。実行中にエラーが起きた場合 panic する。
-func MustTakeWhileBy[V any](slice []V, f func(V) (bool, error)) []V {
+func MustTakeWhileBy[S ~[]V, V any](slice S, f func(V) (bool, error)) S {
 	return must.Must1(TakeWhileBy(slice, f))
 }
 
 // 一致し続ける先頭の値のスライスを返す。
-func TakeWhile[V comparable](slice []V, v V) []V {
+func TakeWhile[S ~[]V, V comparable](slice S, v V) S {
 	for i := range slice {
 		if slice[i] != v {
 			return slice[:i]
@@ -833,7 +833,7 @@ func TakeWhile[V comparable](slice []V, v V) []V {
 }
 
 // 先頭n個の値のスライスを返す。
-func Take[V any](slice []V, n int) []V {
+func Take[S ~[]V, V any](slice S, n int) S {
 	if n > len(slice) {
 		return slice
 	}
@@ -841,7 +841,7 @@ func Take[V any](slice []V, n int) []V {
 }
 
 // 条件を満たし続ける先頭の値を除いたスライスを返す。
-func DropWhileBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
+func DropWhileBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, error) {
 	for i := range slice {
 		ok, err := f(slice[i])
 		if err != nil {
@@ -855,12 +855,12 @@ func DropWhileBy[V any](slice []V, f func(V) (bool, error)) ([]V, error) {
 }
 
 // 条件を満たし続ける先頭の値を除いたスライスを返す。実行中にエラーが起きた場合 panic する。
-func MustDropWhileBy[V any](slice []V, f func(V) (bool, error)) []V {
+func MustDropWhileBy[S ~[]V, V any](slice S, f func(V) (bool, error)) S {
 	return must.Must1(DropWhileBy(slice, f))
 }
 
 // 一致し続ける先頭の値を除いたスライスを返す。
-func DropWhile[V comparable](slice []V, v V) []V {
+func DropWhile[S ~[]V, V comparable](slice S, v V) S {
 	for i := range slice {
 		if slice[i] != v {
 			return slice[i:]
@@ -870,7 +870,7 @@ func DropWhile[V comparable](slice []V, v V) []V {
 }
 
 // 先頭n個の値を除いたスライスを返す。
-func Drop[V any](slice []V, n int) []V {
+func Drop[S ~[]V, V any](slice S, n int) S {
 	if n > len(slice) {
 		return nil
 	}
@@ -878,7 +878,7 @@ func Drop[V any](slice []V, n int) []V {
 }
 
 // 条件を満たし続ける先頭部分と残りの部分、ふたつのスライスを返す。
-func SpanBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
+func SpanBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, S, error) {
 	for i := range slice {
 		ok, err := f(slice[i])
 		if err != nil {
@@ -892,12 +892,12 @@ func SpanBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V, error) {
 }
 
 // 条件を満たし続ける先頭部分と残りの部分、ふたつのスライスを返す。実行中にエラーが起きた場合 panic する。
-func MustSpanBy[V any](slice []V, f func(V) (bool, error)) ([]V, []V) {
+func MustSpanBy[S ~[]V, V any](slice S, f func(V) (bool, error)) (S, S) {
 	return must.Must2(SpanBy(slice, f))
 }
 
 // 一致し続ける先頭部分と残りの部分、ふたつのスライスを返す。
-func Span[V comparable](slice []V, v V) ([]V, []V) {
+func Span[S ~[]V, V comparable](slice S, v V) (S, S) {
 	for i := range slice {
 		if slice[i] != v {
 			return slice[:i], slice[i:]
@@ -907,9 +907,9 @@ func Span[V comparable](slice []V, v V) ([]V, []V) {
 }
 
 // ゼロ値を除いたスライスを返す。
-func Clean[V comparable](slice []V) []V {
+func Clean[S ~[]V, V comparable](slice S) S {
 	zero := *new(V)
-	dst := make([]V, 0, len(slice)/2)
+	dst := make(S, 0, len(slice)/2)
 	for i := range slice {
 		if slice[i] == zero {
 			continue
@@ -920,8 +920,8 @@ func Clean[V comparable](slice []V) []V {
 }
 
 // 重複を除いたスライスを返す。
-func Distinct[V comparable](slice []V) []V {
-	dst := make([]V, 0, len(slice)/2)
+func Distinct[S ~[]V, V comparable](slice S) S {
+	dst := make(S, 0, len(slice)/2)
 	for i := range slice {
 		skip := false
 		for j := range dst {
@@ -1138,8 +1138,8 @@ func Unzip6[V1 any, V2 any, V3 any, V4 any, V5 any, V6 any](slice []tuple.T6[V1,
 }
 
 // 値ごとに関数の返すキーでグルーピングしたマップを返す。
-func GroupBy[K comparable, V any](slice []V, f func(V) (K, error)) (map[K][]V, error) {
-	dst := map[K][]V{}
+func GroupBy[S ~[]V, K comparable, V any](slice S, f func(V) (K, error)) (map[K]S, error) {
+	dst := map[K]S{}
 	for i := range slice {
 		k, err := f(slice[i])
 		if err != nil {
@@ -1151,13 +1151,13 @@ func GroupBy[K comparable, V any](slice []V, f func(V) (K, error)) (map[K][]V, e
 }
 
 // 値ごとに関数の返すキーでグルーピングしたマップを返す。実行中にエラーが起きた場合 panic する。
-func MustGroupBy[K comparable, V any](slice []V, f func(V) (K, error)) map[K][]V {
+func MustGroupBy[S ~[]V, K comparable, V any](slice S, f func(V) (K, error)) map[K]S {
 	return must.Must1(GroupBy(slice, f))
 }
 
 // 平坦化したスライスを返す。
-func Flatten[V any](slice [][]V) []V {
-	dst := make([]V, 0, len(slice))
+func Flatten[S ~[]V, V any](slice []S) S {
+	dst := make(S, 0, len(slice))
 	for i := range slice {
 		dst = append(dst, slice[i]...)
 	}
@@ -1183,8 +1183,8 @@ func MustFlatMap[V1, V2 any](slice []V1, f func(V1) ([]V2, error)) []V2 {
 }
 
 // 値のあいだにseparatorを挿入したスライスを返す。
-func Join[V any](slice []V, separator V) []V {
-	dst := make([]V, 0, len(slice)*2)
+func Join[S ~[]V, V any](slice S, separator V) S {
+	dst := make(S, 0, len(slice)*2)
 	for i := range slice {
 		dst = append(dst, separator, slice[i])
 	}
@@ -1192,11 +1192,11 @@ func Join[V any](slice []V, separator V) []V {
 }
 
 // n個ごとのスライスを返す。
-func Grouped[V any](slice []V, n int) [][]V {
+func Grouped[S ~[]V, V any](slice S, n int) []S {
 	if n == 0 {
 		return nil
 	}
-	dst := make([][]V, 0, len(slice)/n+1)
+	dst := make([]S, 0, len(slice)/n+1)
 	for i := range slice {
 		if i%n == 0 {
 			dst = append(dst, make([]V, 0, n))
@@ -1207,8 +1207,8 @@ func Grouped[V any](slice []V, n int) [][]V {
 }
 
 // stepずつズラしたn個ごとのスライスを返す。
-func Sliding[V any](slice []V, n int, step int) [][]V {
-	dst := make([][]V, 0, len(slice)/step)
+func Sliding[S ~[]V, V any](slice S, n int, step int) []S {
+	dst := make([]S, 0, len(slice)/step)
 	l, r := 0, n
 	for ; r < len(slice); l, r = l+step, r+step {
 		dst = append(dst, slice[l:r])
@@ -1220,7 +1220,7 @@ func Sliding[V any](slice []V, n int, step int) [][]V {
 }
 
 // 要素がn個になるまで先頭に関数の実行結果を挿入する。
-func PadBy[V any](slice []V, n int, f func(int) (V, error)) ([]V, error) {
+func PadBy[S ~[]V, V any](slice S, n int, f func(int) (V, error)) (S, error) {
 	if len(slice) >= n {
 		return slice, nil
 	}
@@ -1236,12 +1236,12 @@ func PadBy[V any](slice []V, n int, f func(int) (V, error)) ([]V, error) {
 }
 
 // 要素がn個になるまで先頭に関数の実行結果を挿入する。
-func MustPadBy[V any](slice []V, n int, f func(int) (V, error)) []V {
+func MustPadBy[S ~[]V, V any](slice S, n int, f func(int) (V, error)) S {
 	return must.Must1(PadBy(slice, n, f))
 }
 
 // 要素がn個になるまで先頭にvを挿入する。
-func Pad[V any](slice []V, n int, v V) []V {
+func Pad[S ~[]V, V any](slice S, n int, v V) S {
 	if len(slice) >= n {
 		return slice
 	}
@@ -1253,12 +1253,12 @@ func Pad[V any](slice []V, n int, v V) []V {
 }
 
 // 要素がn個になるまで先頭にゼロ値を挿入する。
-func PadZero[V any](slice []V, n int) []V {
+func PadZero[S ~[]V, V any](slice S, n int) S {
 	return Pad(slice, n, *new(V))
 }
 
 // 要素がn個になるまで末尾に関数の実行結果を挿入する。
-func PadRightBy[V any](slice []V, n int, f func(int) (V, error)) ([]V, error) {
+func PadRightBy[S ~[]V, V any](slice S, n int, f func(int) (V, error)) (S, error) {
 	if len(slice) >= n {
 		return slice, nil
 	}
@@ -1274,16 +1274,16 @@ func PadRightBy[V any](slice []V, n int, f func(int) (V, error)) ([]V, error) {
 }
 
 // 要素がn個になるまで末尾に関数の実行結果を挿入する。
-func MustPadRightBy[V any](slice []V, n int, f func(int) (V, error)) []V {
+func MustPadRightBy[S ~[]V, V any](slice S, n int, f func(int) (V, error)) S {
 	return must.Must1(PadRightBy(slice, n, f))
 }
 
 // 要素がn個になるまで末尾にvを挿入する。
-func PadRight[V any](slice []V, n int, v V) []V {
+func PadRight[S ~[]V, V any](slice S, n int, v V) S {
 	if len(slice) >= n {
 		return slice
 	}
-	right := make([]V, n-len(slice))
+	right := make(S, n-len(slice))
 	for i := 0; i < len(right); i++ {
 		right[i] = v
 	}
@@ -1291,6 +1291,6 @@ func PadRight[V any](slice []V, n int, v V) []V {
 }
 
 // 要素がn個になるまで末尾にゼロ値を挿入する。
-func PadZeroRight[V any](slice []V, n int) []V {
+func PadZeroRight[S ~[]V, V any](slice S, n int) S {
 	return PadRight(slice, n, *new(V))
 }
