@@ -116,3 +116,35 @@ func Option[V any](v V, ok bool) Iter[V] {
 	}
 	return Empty[V]()
 }
+
+// 関数からイテレータをつくる。
+func FromFunc[V any](f func(Context) (V, bool)) Iter[V] {
+	return &customIter[V]{
+		next: f,
+	}
+}
+
+type Context interface {
+	SetErr(error)
+	Err() error
+}
+
+type customIter[V any] struct {
+	next func(Context) (V, bool)
+	err  error
+}
+
+func (iter *customIter[V]) Next() (V, bool) {
+	if iter.err != nil {
+		return *new(V), false
+	}
+	return iter.next(iter)
+}
+
+func (iter *customIter[V]) SetErr(err error) {
+	iter.err = err
+}
+
+func (iter *customIter[V]) Err() error {
+	return iter.err
+}

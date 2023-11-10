@@ -1,6 +1,8 @@
 package iter
 
 import (
+	"errors"
+
 	"github.com/thamaji/gu/must"
 	"github.com/thamaji/gu/tuple"
 	"golang.org/x/exp/constraints"
@@ -168,19 +170,17 @@ func Concat[V any](iter1 Iter[V], iter2 ...Iter[V]) Iter[V] {
 	cursor := 0
 	iters := append([]Iter[V]{iter1}, iter2...)
 
-	w := &wrappedIter[V]{}
-	w.next = func() (V, bool) {
+	return FromFunc(func(ctx Context) (V, bool) {
 		if cursor >= len(iters) {
 			return *new(V), false
 		}
 		v, ok := iters[cursor].Next()
 		if !ok {
-			w.err = iters[cursor].Err()
+			ctx.SetErr(iters[cursor].Err())
 			cursor++
 		}
 		return v, ok
-	}
-	return w
+	})
 }
 
 // イテレータの末尾に値を追加する。
@@ -191,8 +191,7 @@ func Append[V any](iter Iter[V], v ...V) Iter[V] {
 // 指定した位置に値を追加する。
 func Insert[V any](iter Iter[V], index int, v ...V) Iter[V] {
 	i := 0
-	w := &wrappedIter[V]{}
-	w.next = func() (V, bool) {
+	return FromFunc(func(ctx Context) (V, bool) {
 		if i >= index && i < index+len(v) {
 			v1 := v[i-index]
 			i++
@@ -200,23 +199,21 @@ func Insert[V any](iter Iter[V], index int, v ...V) Iter[V] {
 		}
 		v, ok := iter.Next()
 		if !ok {
-			w.err = iter.Err()
+			ctx.SetErr(iter.Err())
 		}
 		i++
 		return v, ok
-	}
-	return w
+	})
 }
 
 // 指定した位置の値を削除する。
 func Remove[V any](iter Iter[V], index int) Iter[V] {
 	i := 0
-	w := &wrappedIter[V]{}
-	w.next = func() (V, bool) {
+	return FromFunc(func(ctx Context) (V, bool) {
 		for {
 			v, ok := iter.Next()
 			if !ok {
-				w.err = iter.Err()
+				ctx.SetErr(iter.Err())
 				return *new(V), false
 			}
 			skip := i == index
@@ -226,8 +223,7 @@ func Remove[V any](iter Iter[V], index int) Iter[V] {
 			}
 			return v, ok
 		}
-	}
-	return w
+	})
 }
 
 // 値ごとに関数を実行する。
@@ -321,36 +317,32 @@ func MustCount[V comparable](iter Iter[V], v V) int {
 // 位置のイテレータを返す。
 func Indices[V any](iter Iter[V]) Iter[int] {
 	i := 0
-	w := &wrappedIter[int]{}
-	w.next = func() (int, bool) {
+	return FromFunc(func(ctx Context) (int, bool) {
 		if _, ok := iter.Next(); !ok {
-			w.err = iter.Err()
+			ctx.SetErr(iter.Err())
 			return 0, false
 		}
 		v := i
 		i++
 		return v, true
-	}
-	return w
+	})
 }
 
 // 値を変換したイテレータを返す。
 func Map[V1 any, V2 any](iter Iter[V1], f func(V1) (V2, error)) Iter[V2] {
-	w := &wrappedIter[V2]{}
-	w.next = func() (V2, bool) {
+	return FromFunc(func(ctx Context) (V2, bool) {
 		v1, ok := iter.Next()
 		if !ok {
-			w.err = iter.Err()
+			ctx.SetErr(iter.Err())
 			return *new(V2), false
 		}
 		v2, err := f(v1)
 		if err != nil {
-			w.err = err
+			ctx.SetErr(err)
 			return *new(V2), false
 		}
 		return v2, true
-	}
-	return w
+	})
 }
 
 // 値を順に演算する。
@@ -760,17 +752,16 @@ func ReplaceAll[V comparable](iter Iter[V], old V, new V) Iter[V] {
 
 // 条件を満たす値だけのイテレータを返す。
 func FilterBy[V any](iter Iter[V], f func(V) (bool, error)) Iter[V] {
-	w := &wrappedIter[V]{}
-	w.next = func() (V, bool) {
+	return FromFunc(func(ctx Context) (V, bool) {
 		for {
 			v, ok := iter.Next()
 			if !ok {
-				w.err = iter.Err()
+				ctx.SetErr(iter.Err())
 				return *new(V), false
 			}
 			ok, err := f(v)
 			if err != nil {
-				w.err = err
+				ctx.SetErr(err)
 				return *new(V), false
 			}
 			if !ok {
@@ -778,8 +769,7 @@ func FilterBy[V any](iter Iter[V], f func(V) (bool, error)) Iter[V] {
 			}
 			return v, true
 		}
-	}
-	return w
+	})
 }
 
 // 一致する値だけのイテレータを返す。
@@ -919,21 +909,20 @@ func MustPartition[V comparable](iter Iter[V], v V) (Iter[V], Iter[V]) {
 // 条件を満たし続ける先頭の値のイテレータを返す。
 func TakeWhileBy[V any](iter Iter[V], f func(V) (bool, error)) Iter[V] {
 	done := false
-	w := &wrappedIter[V]{}
-	w.next = func() (V, bool) {
+	return FromFunc(func(ctx Context) (V, bool) {
 		if done {
 			return *new(V), false
 		}
 
 		v, ok := iter.Next()
 		if !ok {
-			w.err = iter.Err()
+			ctx.SetErr(iter.Err())
 			return *new(V), false
 		}
 
 		ok, err := f(v)
 		if err != nil {
-			w.err = err
+			ctx.SetErr(err)
 			return *new(V), false
 		}
 		if !ok {
@@ -941,8 +930,7 @@ func TakeWhileBy[V any](iter Iter[V], f func(V) (bool, error)) Iter[V] {
 			return *new(V), false
 		}
 		return v, true
-	}
-	return w
+	})
 }
 
 // 一致し続ける先頭の値のイテレータを返す。
@@ -963,8 +951,7 @@ func Take[V any](iter Iter[V], n int) Iter[V] {
 // 条件を満たし続ける先頭の値を除いたイテレータを返す。
 func DropWhileBy[V any](iter Iter[V], f func(V) (bool, error)) Iter[V] {
 	done := false
-	w := &wrappedIter[V]{}
-	w.next = func() (V, bool) {
+	return FromFunc(func(ctx Context) (V, bool) {
 		if done {
 			return iter.Next()
 		}
@@ -972,13 +959,13 @@ func DropWhileBy[V any](iter Iter[V], f func(V) (bool, error)) Iter[V] {
 		for {
 			v, ok := iter.Next()
 			if !ok {
-				w.err = w.Err()
+				ctx.SetErr(iter.Err())
 				return *new(V), false
 			}
 
 			ok, err := f(v)
 			if err != nil {
-				w.err = w.Err()
+				ctx.SetErr(err)
 				return *new(V), false
 			}
 			if ok {
@@ -987,8 +974,7 @@ func DropWhileBy[V any](iter Iter[V], f func(V) (bool, error)) Iter[V] {
 			done = true
 			return v, true
 		}
-	}
-	return w
+	})
 }
 
 // 一致し続ける先頭の値を除いたイテレータを返す。
@@ -1052,12 +1038,11 @@ func Clean[V comparable](iter Iter[V]) Iter[V] {
 // 重複を除いたイテレータを返す。
 func Distinct[V comparable](iter Iter[V]) Iter[V] {
 	m := map[V]struct{}{}
-	w := &wrappedIter[V]{}
-	w.next = func() (V, bool) {
+	return FromFunc(func(ctx Context) (V, bool) {
 		for {
 			v, ok := iter.Next()
 			if !ok {
-				w.err = iter.Err()
+				ctx.SetErr(iter.Err())
 				return *new(V), false
 			}
 
@@ -1068,24 +1053,22 @@ func Distinct[V comparable](iter Iter[V]) Iter[V] {
 
 			return v, true
 		}
-	}
-	return w
+	})
 }
 
 // 条件を満たす値を変換したイテレータを返す。
 func Collect[V1 any, V2 any](iter Iter[V1], f func(V1) (V2, bool, error)) Iter[V2] {
-	w := &wrappedIter[V2]{}
-	w.next = func() (V2, bool) {
+	return FromFunc(func(ctx Context) (V2, bool) {
 		for {
 			v1, ok := iter.Next()
 			if !ok {
-				w.err = iter.Err()
+				ctx.SetErr(iter.Err())
 				return *new(V2), false
 			}
 
 			v2, ok, err := f(v1)
 			if err != nil {
-				w.err = iter.Err()
+				ctx.SetErr(err)
 				return *new(V2), false
 			}
 			if !ok {
@@ -1093,79 +1076,58 @@ func Collect[V1 any, V2 any](iter Iter[V1], f func(V1) (V2, bool, error)) Iter[V
 			}
 			return v2, true
 		}
-	}
-	return w
+	})
 }
 
 // 値と位置をペアにしたイテレータを返す。
 func ZipWithIndex[V any](iter Iter[V]) Iter[tuple.T2[V, int]] {
 	i := 0
-	w := &wrappedIter[tuple.T2[V, int]]{}
-	w.next = func() (tuple.T2[V, int], bool) {
+	return FromFunc(func(ctx Context) (tuple.T2[V, int], bool) {
 		v, ok := iter.Next()
 		if !ok {
-			w.err = iter.Err()
+			ctx.SetErr(iter.Err())
 			return tuple.NewT2(*new(V), 0), false
 		}
 		t := tuple.NewT2(v, i)
 		i++
 		return t, true
-	}
-	return w
+	})
 }
 
 // ２つのイテレータの同じ位置の値をペアにしたイテレータを返す。
 func Zip2[V1 any, V2 any](iter1 Iter[V1], iter2 Iter[V2]) Iter[tuple.T2[V1, V2]] {
-	w := &wrappedIter[tuple.T2[V1, V2]]{}
-	w.next = func() (tuple.T2[V1, V2], bool) {
+	return FromFunc(func(ctx Context) (tuple.T2[V1, V2], bool) {
 		v1, ok1 := iter1.Next()
 		v2, ok2 := iter2.Next()
 		if ok1 && ok2 {
 			return tuple.NewT2(v1, v2), true
 		}
-
-		err := iter1.Err()
-		if err1 := iter2.Err(); err == nil {
-			err = err1
-		}
-		if err != nil {
-			w.err = err
+		if err := errors.Join(iter1.Err(), iter2.Err()); err != nil {
+			ctx.SetErr(err)
 		}
 		return tuple.NewT2(*new(V1), *new(V2)), false
-	}
-	return w
+	})
 }
 
 // ３つのイテレータの同じ位置の値をペアにしたイテレータを返す。
 func Zip3[V1 any, V2 any, V3 any](iter1 Iter[V1], iter2 Iter[V2], iter3 Iter[V3]) Iter[tuple.T3[V1, V2, V3]] {
-	w := &wrappedIter[tuple.T3[V1, V2, V3]]{}
-	w.next = func() (tuple.T3[V1, V2, V3], bool) {
+	return FromFunc(func(ctx Context) (tuple.T3[V1, V2, V3], bool) {
 		v1, ok1 := iter1.Next()
 		v2, ok2 := iter2.Next()
 		v3, ok3 := iter3.Next()
 		if ok1 && ok2 && ok3 {
 			return tuple.NewT3(v1, v2, v3), true
 		}
-
-		err := iter1.Err()
-		if err1 := iter2.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter3.Err(); err == nil {
-			err = err1
-		}
-		if err != nil {
-			w.err = err
+		if err := errors.Join(iter1.Err(), iter2.Err(), iter3.Err()); err != nil {
+			ctx.SetErr(err)
 		}
 		return tuple.NewT3(*new(V1), *new(V2), *new(V3)), false
-	}
-	return w
+	})
 }
 
 // ４つのイテレータの同じ位置の値をペアにしたイテレータを返す。
 func Zip4[V1 any, V2 any, V3 any, V4 any](iter1 Iter[V1], iter2 Iter[V2], iter3 Iter[V3], iter4 Iter[V4]) Iter[tuple.T4[V1, V2, V3, V4]] {
-	w := &wrappedIter[tuple.T4[V1, V2, V3, V4]]{}
-	w.next = func() (tuple.T4[V1, V2, V3, V4], bool) {
+	return FromFunc(func(ctx Context) (tuple.T4[V1, V2, V3, V4], bool) {
 		v1, ok1 := iter1.Next()
 		v2, ok2 := iter2.Next()
 		v3, ok3 := iter3.Next()
@@ -1173,29 +1135,16 @@ func Zip4[V1 any, V2 any, V3 any, V4 any](iter1 Iter[V1], iter2 Iter[V2], iter3 
 		if ok1 && ok2 && ok3 && ok4 {
 			return tuple.NewT4(v1, v2, v3, v4), true
 		}
-
-		err := iter1.Err()
-		if err1 := iter2.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter3.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter4.Err(); err == nil {
-			err = err1
-		}
-		if err != nil {
-			w.err = err
+		if err := errors.Join(iter1.Err(), iter2.Err(), iter3.Err(), iter4.Err()); err != nil {
+			ctx.SetErr(err)
 		}
 		return tuple.NewT4(*new(V1), *new(V2), *new(V3), *new(V4)), false
-	}
-	return w
+	})
 }
 
 // ５つのイテレータの同じ位置の値をペアにしたイテレータを返す。
 func Zip5[V1 any, V2 any, V3 any, V4 any, V5 any](iter1 Iter[V1], iter2 Iter[V2], iter3 Iter[V3], iter4 Iter[V4], iter5 Iter[V5]) Iter[tuple.T5[V1, V2, V3, V4, V5]] {
-	w := &wrappedIter[tuple.T5[V1, V2, V3, V4, V5]]{}
-	w.next = func() (tuple.T5[V1, V2, V3, V4, V5], bool) {
+	return FromFunc(func(ctx Context) (tuple.T5[V1, V2, V3, V4, V5], bool) {
 		v1, ok1 := iter1.Next()
 		v2, ok2 := iter2.Next()
 		v3, ok3 := iter3.Next()
@@ -1204,32 +1153,16 @@ func Zip5[V1 any, V2 any, V3 any, V4 any, V5 any](iter1 Iter[V1], iter2 Iter[V2]
 		if ok1 && ok2 && ok3 && ok4 && ok5 {
 			return tuple.NewT5(v1, v2, v3, v4, v5), true
 		}
-
-		err := iter1.Err()
-		if err1 := iter2.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter3.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter4.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter5.Err(); err == nil {
-			err = err1
-		}
-		if err != nil {
-			w.err = err
+		if err := errors.Join(iter1.Err(), iter2.Err(), iter3.Err(), iter4.Err(), iter5.Err()); err != nil {
+			ctx.SetErr(err)
 		}
 		return tuple.NewT5(*new(V1), *new(V2), *new(V3), *new(V4), *new(V5)), false
-	}
-	return w
+	})
 }
 
 // ６つのイテレータの同じ位置の値をペアにしたイテレータを返す。
 func Zip6[V1 any, V2 any, V3 any, V4 any, V5 any, V6 any](iter1 Iter[V1], iter2 Iter[V2], iter3 Iter[V3], iter4 Iter[V4], iter5 Iter[V5], iter6 Iter[V6]) Iter[tuple.T6[V1, V2, V3, V4, V5, V6]] {
-	w := &wrappedIter[tuple.T6[V1, V2, V3, V4, V5, V6]]{}
-	w.next = func() (tuple.T6[V1, V2, V3, V4, V5, V6], bool) {
+	return FromFunc(func(ctx Context) (tuple.T6[V1, V2, V3, V4, V5, V6], bool) {
 		v1, ok1 := iter1.Next()
 		v2, ok2 := iter2.Next()
 		v3, ok3 := iter3.Next()
@@ -1239,29 +1172,11 @@ func Zip6[V1 any, V2 any, V3 any, V4 any, V5 any, V6 any](iter1 Iter[V1], iter2 
 		if ok1 && ok2 && ok3 && ok4 && ok5 && ok6 {
 			return tuple.NewT6(v1, v2, v3, v4, v5, v6), true
 		}
-
-		err := iter1.Err()
-		if err1 := iter2.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter3.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter4.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter5.Err(); err == nil {
-			err = err1
-		}
-		if err1 := iter6.Err(); err == nil {
-			err = err1
-		}
-		if err != nil {
-			w.err = err
+		if err := errors.Join(iter1.Err(), iter2.Err(), iter3.Err(), iter4.Err(), iter5.Err(), iter6.Err()); err != nil {
+			ctx.SetErr(err)
 		}
 		return tuple.NewT6(*new(V1), *new(V2), *new(V3), *new(V4), *new(V5), *new(V6)), false
-	}
-	return w
+	})
 }
 
 // 値のペアを分離して２つのイテレータを返す。
@@ -1397,11 +1312,10 @@ func MustGroupBy[K comparable, V any](iter Iter[V], f func(V) (K, error)) map[K]
 // 平坦化したイテレータを返す。
 func Flatten[V any](iter Iter[Iter[V]]) Iter[V] {
 	sub, ok := iter.Next()
-	w := &wrappedIter[V]{}
-	w.next = func() (V, bool) {
+	return FromFunc(func(ctx Context) (V, bool) {
 		for {
 			if !ok {
-				w.err = iter.Err()
+				ctx.SetErr(iter.Err())
 				return *new(V), false
 			}
 
@@ -1409,14 +1323,13 @@ func Flatten[V any](iter Iter[Iter[V]]) Iter[V] {
 				return v, true
 			}
 			if err := sub.Err(); err != nil {
-				w.err = err
+				ctx.SetErr(err)
 				return *new(V), false
 			}
 
 			sub, ok = iter.Next()
 		}
-	}
-	return w
+	})
 }
 
 // 値をイテレータに変換し、それらを結合したイテレータを返す。
