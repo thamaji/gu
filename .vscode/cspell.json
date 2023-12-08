@@ -1,0 +1,15 @@
+{
+    "useGitignore": true,
+    "ignorePaths": [
+        "**/.git/objects/**",
+        "**/.devcontainer/**",
+        "**/.vscode/**",
+        "**/go.mod"
+    ],
+    "words": [
+        "Backoff",
+        "Cloneable",
+        "Inplace",
+        "thamaji"
+    ]
+}

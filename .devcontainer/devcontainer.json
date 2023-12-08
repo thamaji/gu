@@ -1,28 +1,47 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.154.0/containers/docker-existing-dockerfile
 {
-	"name": "github.com/thamaji/gu",
+	"name": "${localWorkspaceFolderBasename}",
 	"build": {
 		"dockerfile": "Dockerfile",
 		"context": ".",
-		"args": {},
-		"target": "devcontainer"
+		"args": {
+			"UBUNTU_VERSION": "22.04",
+			"APT_MIRROR": "http://jp.archive.ubuntu.com/ubuntu/",
+			"USERNAME": "vscode",
+			"GO_VERSION": "1.18.10"
+		}
 	},
 	"containerUser": "vscode",
 	"remoteUser": "vscode",
 	"updateRemoteUserUID": true,
 	"mounts": [
-		"source=${localWorkspaceFolder}/.devcontainer/.extensions,target=/home/vscode/.vscode-server/extensions,type=bind",
-		"source=${localWorkspaceFolder}/.devcontainer/.go,target=/home/vscode/go,type=bind"
+		{
+			"type": "bind",
+			"source": "${localWorkspaceFolder}/.devcontainer/.bash",
+			"target": "/home/vscode/.cache/bash"
+		},
+		{
+			"type": "volume",
+			"source": "devcontainer_extensions",
+			"target": "/home/vscode/.vscode-server/extensions"
+		},
+		{
+			"type": "volume",
+			"source": "devcontainer_go1.18",
+			"target": "/home/vscode/go"
+		}
 	],
-	"forwardPorts": [],
+	"init": true,
+	"privileged": false,
 	"runArgs": [
-		"--init",
-		"--net=host"
+		"--add-host=host.docker.internal:host-gateway"
 	],
-	"extensions": [
-		"golang.go",
-		"jgclark.vscode-todo-highlight",
-		"streetsidesoftware.code-spell-checker"
-	]
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"golang.go",
+				"jgclark.vscode-todo-highlight",
+				"streetsidesoftware.code-spell-checker"
+			]
+		}
+	}
 }
