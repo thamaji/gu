@@ -1,6 +1,8 @@
 package iter
 
 import (
+	"reflect"
+
 	"github.com/thamaji/gu/tuple"
 	"golang.org/x/exp/constraints"
 )
@@ -59,52 +61,43 @@ func FromSlice[V any](slice []V) Iter[V] {
 
 // マップからイテレータをつくる。
 func FromMap[K comparable, V any](m map[K]V) Iter[tuple.T2[K, V]] {
-	keys := make([]K, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	cursor := 0
+	iter := reflect.ValueOf(m).MapRange()
+	next := iter.Next()
 	return IterFunc[tuple.T2[K, V]](func() (tuple.T2[K, V], bool) {
-		if cursor >= len(keys) {
+		if !next {
 			return tuple.NewT2(*new(K), *new(V)), false
 		}
-		k := keys[cursor]
-		v := m[k]
-		cursor++
+		k := iter.Key().Interface().(K)
+		v := iter.Value().Interface().(V)
+		next = iter.Next()
 		return tuple.NewT2(k, v), true
 	})
 }
 
 // マップのキーからイテレータをつくる。
 func FromMapKeys[K comparable, V any](m map[K]V) Iter[K] {
-	keys := make([]K, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	cursor := 0
+	iter := reflect.ValueOf(m).MapRange()
+	next := iter.Next()
 	return IterFunc[K](func() (K, bool) {
-		if cursor >= len(keys) {
+		if !next {
 			return *new(K), false
 		}
-		v := keys[cursor]
-		cursor++
-		return v, true
+		k := iter.Key().Interface().(K)
+		next = iter.Next()
+		return k, true
 	})
 }
 
 // マップの値からイテレータをつくる。
 func FromMapValues[K comparable, V any](m map[K]V) Iter[V] {
-	values := make([]V, 0, len(m))
-	for _, v := range m {
-		values = append(values, v)
-	}
-	cursor := 0
+	iter := reflect.ValueOf(m).MapRange()
+	next := iter.Next()
 	return IterFunc[V](func() (V, bool) {
-		if cursor >= len(values) {
+		if !next {
 			return *new(V), false
 		}
-		v := values[cursor]
-		cursor++
+		v := iter.Value().Interface().(V)
+		next = iter.Next()
 		return v, true
 	})
 }
