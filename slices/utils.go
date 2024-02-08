@@ -3,7 +3,7 @@ package slices
 import "math/rand"
 
 // 要素をすべて削除する。
-func Clear[V any](slice []V) []V {
+func Clear[S ~[]V, V any](slice S) S {
 	for i := range slice {
 		slice[i] = *new(V)
 	}
