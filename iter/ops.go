@@ -1102,8 +1102,22 @@ func Zip2[V1 any, V2 any](iter1 Iter[V1], iter2 Iter[V2]) Iter[tuple.T2[V1, V2]]
 		if ok1 && ok2 {
 			return tuple.NewT2(v1, v2), true
 		}
-		if err := errors.Join(iter1.Err(), iter2.Err()); err != nil {
-			ctx.SetErr(err)
+		errs := make([]error, 0, 2)
+		if err := iter1.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter2.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if len(errs) > 0 {
+			var b []byte
+			for i, err := range errs {
+				if i > 0 {
+					b = append(b, '\n')
+				}
+				b = append(b, err.Error()...)
+			}
+			ctx.SetErr(errors.New(string(b)))
 		}
 		return tuple.NewT2(*new(V1), *new(V2)), false
 	})
@@ -1118,8 +1132,25 @@ func Zip3[V1 any, V2 any, V3 any](iter1 Iter[V1], iter2 Iter[V2], iter3 Iter[V3]
 		if ok1 && ok2 && ok3 {
 			return tuple.NewT3(v1, v2, v3), true
 		}
-		if err := errors.Join(iter1.Err(), iter2.Err(), iter3.Err()); err != nil {
-			ctx.SetErr(err)
+		errs := make([]error, 0, 3)
+		if err := iter1.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter2.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter3.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if len(errs) > 0 {
+			var b []byte
+			for i, err := range errs {
+				if i > 0 {
+					b = append(b, '\n')
+				}
+				b = append(b, err.Error()...)
+			}
+			ctx.SetErr(errors.New(string(b)))
 		}
 		return tuple.NewT3(*new(V1), *new(V2), *new(V3)), false
 	})
@@ -1135,8 +1166,28 @@ func Zip4[V1 any, V2 any, V3 any, V4 any](iter1 Iter[V1], iter2 Iter[V2], iter3 
 		if ok1 && ok2 && ok3 && ok4 {
 			return tuple.NewT4(v1, v2, v3, v4), true
 		}
-		if err := errors.Join(iter1.Err(), iter2.Err(), iter3.Err(), iter4.Err()); err != nil {
-			ctx.SetErr(err)
+		errs := make([]error, 0, 4)
+		if err := iter1.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter2.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter3.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter4.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if len(errs) > 0 {
+			var b []byte
+			for i, err := range errs {
+				if i > 0 {
+					b = append(b, '\n')
+				}
+				b = append(b, err.Error()...)
+			}
+			ctx.SetErr(errors.New(string(b)))
 		}
 		return tuple.NewT4(*new(V1), *new(V2), *new(V3), *new(V4)), false
 	})
@@ -1153,8 +1204,31 @@ func Zip5[V1 any, V2 any, V3 any, V4 any, V5 any](iter1 Iter[V1], iter2 Iter[V2]
 		if ok1 && ok2 && ok3 && ok4 && ok5 {
 			return tuple.NewT5(v1, v2, v3, v4, v5), true
 		}
-		if err := errors.Join(iter1.Err(), iter2.Err(), iter3.Err(), iter4.Err(), iter5.Err()); err != nil {
-			ctx.SetErr(err)
+		errs := make([]error, 0, 5)
+		if err := iter1.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter2.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter3.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter4.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter5.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if len(errs) > 0 {
+			var b []byte
+			for i, err := range errs {
+				if i > 0 {
+					b = append(b, '\n')
+				}
+				b = append(b, err.Error()...)
+			}
+			ctx.SetErr(errors.New(string(b)))
 		}
 		return tuple.NewT5(*new(V1), *new(V2), *new(V3), *new(V4), *new(V5)), false
 	})
@@ -1172,8 +1246,34 @@ func Zip6[V1 any, V2 any, V3 any, V4 any, V5 any, V6 any](iter1 Iter[V1], iter2 
 		if ok1 && ok2 && ok3 && ok4 && ok5 && ok6 {
 			return tuple.NewT6(v1, v2, v3, v4, v5, v6), true
 		}
-		if err := errors.Join(iter1.Err(), iter2.Err(), iter3.Err(), iter4.Err(), iter5.Err(), iter6.Err()); err != nil {
-			ctx.SetErr(err)
+		errs := make([]error, 0, 6)
+		if err := iter1.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter2.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter3.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter4.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter5.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iter6.Err(); err != nil {
+			errs = append(errs, err)
+		}
+		if len(errs) > 0 {
+			var b []byte
+			for i, err := range errs {
+				if i > 0 {
+					b = append(b, '\n')
+				}
+				b = append(b, err.Error()...)
+			}
+			ctx.SetErr(errors.New(string(b)))
 		}
 		return tuple.NewT6(*new(V1), *new(V2), *new(V3), *new(V4), *new(V5), *new(V6)), false
 	})
