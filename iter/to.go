@@ -1,6 +1,8 @@
 package iter
 
 import (
+	"encoding/json"
+
 	"github.com/thamaji/gu/must"
 	"github.com/thamaji/gu/tuple"
 )
@@ -63,4 +65,21 @@ func ToPtr[V any](iter Iter[V]) (*V, error) {
 // ふたつ目以降の値は無視される。
 func MustToPtr[V any](iter Iter[V]) *V {
 	return must.Must1(ToPtr(iter))
+}
+
+// イテレータを json.Encoder に書き込む。
+func WriteJSON[V any](iter Iter[V], encoder *json.Encoder) error {
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			if err := iter.Err(); err != nil {
+				return err
+			}
+			break
+		}
+		if err := encoder.Encode(v); err != nil {
+			return err
+		}
+	}
+	return nil
 }
