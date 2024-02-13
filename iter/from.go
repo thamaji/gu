@@ -2,6 +2,7 @@ package iter
 
 import (
 	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"io"
 	"io/fs"
@@ -166,6 +167,22 @@ func FromJSON[V any](decoder *json.Decoder) Iter[V] {
 			}
 			more = decoder.More()
 			return v, true
+		},
+	}
+}
+
+// csv.Reader からイテレータをつくる。
+func FromCSV(r *csv.Reader) Iter[[]string] {
+	return &customIter[[]string]{
+		next: func(ctx Context) ([]string, bool) {
+			record, err := r.Read()
+			if err != nil {
+				if err != io.EOF {
+					ctx.SetErr(err)
+				}
+				return nil, false
+			}
+			return record, true
 		},
 	}
 }
