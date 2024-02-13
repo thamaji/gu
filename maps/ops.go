@@ -61,6 +61,57 @@ func MustGetOrFunc[K comparable, V any](m map[K]V, k K, f func() (V, error)) V {
 	return must.Must1(GetOrFunc(m, k, f))
 }
 
+// 指定したキーの値を更新する。
+func Put[K comparable, V any](m map[K]V, k K, v V) V {
+	m[k] = v
+	return v
+}
+
+// 指定したキーの値を関数の実行結果で更新する。
+// 関数はもとの値と値が存在するかを受け取り、更新後の値を返す。
+func PutBy[K comparable, V any](m map[K]V, k K, f func(V, bool) (V, error)) (V, error) {
+	v, ok := m[k]
+	v, err := f(v, ok)
+	if err != nil {
+		return *new(V), err
+	}
+	m[k] = v
+	return v, err
+}
+
+// 指定したキーの値を関数の実行結果で更新する。実行中にエラーが起きた場合 panic する。
+// 関数はもとの値と値が存在するかを受け取り、更新後の値を返す。
+func MustPutBy[K comparable, V any](m map[K]V, k K, f func(V, bool) (V, error)) V {
+	return must.Must1(PutBy(m, k, f))
+}
+
+// 指定したキーが空のとき、値を更新する。
+func PutIfEmpty[K comparable, V any](m map[K]V, k K, v V) V {
+	if v, ok := m[k]; ok {
+		return v
+	}
+	m[k] = v
+	return v
+}
+
+// 指定したキーが空のとき、関数の実行結果で値を更新する。
+func PutIfEmptyBy[K comparable, V any](m map[K]V, k K, f func() (V, error)) (V, error) {
+	if v, ok := m[k]; ok {
+		return v, nil
+	}
+	v, err := f()
+	if err != nil {
+		return *new(V), err
+	}
+	m[k] = v
+	return v, err
+}
+
+// 指定したキーが空のとき、関数の実行結果で値を更新する。実行中にエラーが起きた場合 panic する。
+func MustPutIfEmptyBy[K comparable, V any](m map[K]V, k K, f func() (V, error)) V {
+	return must.Must1(PutIfEmptyBy(m, k, f))
+}
+
 // 要素をすべてコピーしたマップを返す。
 func Clone[M ~map[K]V, K comparable, V any](m M) M {
 	dst := make(M, len(m))
